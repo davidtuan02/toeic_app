@@ -13,6 +13,7 @@ import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/user")
@@ -107,32 +108,54 @@ public class UserController {
 
 
     @PostMapping("/register")
-    public ResponseEntity<ResponseWrapper<User>> saveUser(@RequestBody User user) {
+    public ResponseEntity<Map<String, Object>> saveUser(@RequestBody User user) {
+        Map<String, Object> response = new HashMap<>();
         try {
+            // Check if the user already exists by email
             Optional<User> existingUser = userRepo.findByEmail(user.getEmail());
             if (existingUser.isPresent()) {
-                return ResponseEntity.status(HttpStatus.OK)
-                        .body(new ResponseWrapper<>(null, 2));
+                response.put("status", 2);
+                response.put("message", "User with this email already exists");
+                return ResponseEntity.status(HttpStatus.OK).body(response);
             }
-            if (user.getName() == null || user.getName().isEmpty() ||
-                    user.getEmail() == null || user.getEmail().isEmpty() ||
-                    user.getPassword() == null || user.getPassword().isEmpty()) {
-                return ResponseEntity.status(HttpStatus.OK)
-                        .body(new ResponseWrapper<>(null, 2));
+
+            // Validate required fields
+            if (user.getName() == null || user.getName().isEmpty()) {
+                response.put("status", 2);
+                response.put("message", "Name is required");
+                return ResponseEntity.status(HttpStatus.OK).body(response);
             }
+            if (user.getEmail() == null || user.getEmail().isEmpty()) {
+                response.put("status", 2);
+                response.put("message", "Email is required");
+                return ResponseEntity.status(HttpStatus.OK).body(response);
+            }
+            if (user.getPassword() == null || user.getPassword().isEmpty()) {
+                response.put("status", 2);
+                response.put("message", "Password is required");
+                return ResponseEntity.status(HttpStatus.OK).body(response);
+            }
+
+            // Set dates and encrypt password
             Date currentDate = new Date();
             user.setCreatedDate(currentDate);
             user.setUpdatedDate(currentDate);
             user.setPassword(DigestUtils.md5DigestAsHex(user.getPassword().getBytes()));
             user.setRole("user");
+
+            // Save the new user
             User savedUser = userRepo.save(user);
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseWrapper<>(savedUser, 1));
+            response.put("status", 1);
+            response.put("message", "User registered successfully");
+            response.put("user", savedUser);
+            return ResponseEntity.status(HttpStatus.OK).body(response);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseWrapper<>(null, 3));
+            response.put("status", 3);
+            response.put("message", "An error occurred during registration: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
+
 
 
 
@@ -143,11 +166,16 @@ public class UserController {
             if (users.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
             }
+
+            // Reverse the list order
+            Collections.reverse(users);
+
             return ResponseEntity.status(HttpStatus.OK).body(users);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getUserById(@PathVariable("id") String id) {
@@ -168,15 +196,22 @@ public class UserController {
 
     @PutMapping("/update/{id}")
     public ResponseEntity<?> updateUser(@PathVariable("id") String id, @RequestBody User userDetails) {
+        Map<String, Object> response = new HashMap<>();
+
         try {
             Optional<User> userOptional = userRepo.findById(new ObjectId(id));
             if (userOptional.isPresent()) {
                 User user = userOptional.get();
+
                 if (userDetails.getEmail() != null) {
                     user.setEmail(userDetails.getEmail());
                 }
                 if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
-                    user.setPassword(DigestUtils.md5DigestAsHex(userDetails.getPassword().getBytes()));
+                    if (userDetails.getPassword().length() == 32) {
+                        user.setPassword(userDetails.getPassword());
+                    } else {
+                        user.setPassword(DigestUtils.md5DigestAsHex(userDetails.getPassword().getBytes()));
+                    }
                 }
                 if (userDetails.getName() != null) {
                     user.setName(userDetails.getName());
@@ -184,29 +219,58 @@ public class UserController {
                 if (userDetails.getPhone() != null) {
                     user.setPhone(userDetails.getPhone());
                 }
+
                 user.setUpdatedDate(new Date());
                 User updatedUser = userRepo.save(user);
-                return ResponseEntity.status(HttpStatus.OK).body(updatedUser);
+
+                // Prepare the success response
+                response.put("status", HttpStatus.OK.value());
+                response.put("message", "User updated successfully");
+                response.put("updatedUser", updatedUser);
+
+                return ResponseEntity.status(HttpStatus.OK).body(response);
             } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
+                response.put("status", HttpStatus.NOT_FOUND.value());
+                response.put("message", "User not found.");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
             }
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user ID format or invalid data.");
+            response.put("status", HttpStatus.BAD_REQUEST.value());
+            response.put("message", "Invalid user ID format or invalid data.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while updating the user.");
+            response.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            response.put("message", "An error occurred while updating the user.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
 
 
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable("id") String id) {
-        Optional<User> userOptional = userRepo.findById(new ObjectId(id));
-        if (userOptional.isPresent()) {
-            userRepo.delete(userOptional.get());
-            return ResponseEntity.noContent().build();
+
+    @DeleteMapping("/deleteUsers")
+    public ResponseEntity<Map<String, Object>> deleteUsers(@RequestParam List<String> ids) {
+        Map<String, Object> response = new HashMap<>();
+        List<ObjectId> objectIds = ids.stream()
+                .map(ObjectId::new)
+                .collect(Collectors.toList());
+
+        List<User> usersToDelete = userRepo.findAllById(objectIds);
+
+        if (!usersToDelete.isEmpty()) {
+            userRepo.deleteAll(usersToDelete);
+            response.put("status", "success");
+            response.put("message", usersToDelete.size() + " users deleted successfully.");
+            return ResponseEntity.ok(response);
         } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            response.put("status", "error");
+            response.put("message", "No users found for the provided IDs.");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         }
     }
+
+
+
+
+
 }

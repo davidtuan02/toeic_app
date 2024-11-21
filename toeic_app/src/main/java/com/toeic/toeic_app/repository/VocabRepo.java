@@ -12,6 +12,9 @@ import java.util.List;
 
 @Repository
 public interface VocabRepo extends MongoRepository<Vocabulary, ObjectId> {
+    @Query("{ 'text' : { $regex: ?0, $options: 'i' } }")
+    List<Vocabulary> findByTextContainingIgnoreCaseCustom(String searchKey);
+
     @Query("{ 'text': { $regex: ?0, $options: 'i' } }")
     List<Vocabulary> findByText(String textQuery);
 

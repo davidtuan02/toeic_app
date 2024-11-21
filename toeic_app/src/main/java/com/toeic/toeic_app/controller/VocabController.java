@@ -4,13 +4,13 @@ import com.toeic.toeic_app.model.Vocabulary;
 import com.toeic.toeic_app.repository.UserRepo;
 import com.toeic.toeic_app.repository.VocabRepo;
 import com.toeic.toeic_app.wrapper.ResponseWrapper;
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @RestController
 @RequestMapping("/vocab")
@@ -19,17 +19,117 @@ public class VocabController {
     private VocabRepo vocabRepo;
 
     @PostMapping("save")
-    public ResponseEntity<?> addVocabulary(@RequestBody Vocabulary vocabulary) {
+    public ResponseEntity<Map<String, Object>> addVocabulary(@RequestBody Vocabulary vocabulary) {
+        Map<String, Object> response = new HashMap<>();
         try {
             if (vocabulary == null) {
-                return ResponseEntity.status(HttpStatus.OK).body(null);
+                response.put("code", HttpStatus.BAD_REQUEST.value());
+                response.put("message", "Vocabulary data is missing");
+                response.put("data", null);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
             }
+
             Vocabulary createdVocabulary = vocabRepo.save(vocabulary);
-            return ResponseEntity.status(HttpStatus.OK).body(createdVocabulary);
+            response.put("code", HttpStatus.OK.value());
+            response.put("message", "Vocabulary saved successfully");
+            response.put("data", createdVocabulary);
+            return ResponseEntity.ok(response);
+
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.OK).body(null);
+            response.put("code", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            response.put("message", "An error occurred while saving the vocabulary");
+            response.put("data", null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
+
+    @DeleteMapping("delete")
+    public ResponseEntity<Map<String, Object>> deleteVocabularies(@RequestParam List<String> ids) {
+        Map<String, Object> response = new HashMap<>();
+        List<String> deletedIds = new ArrayList<>();
+        List<String> notFoundIds = new ArrayList<>();
+
+        try {
+            for (String id : ids) {
+                // Convert the String ID to ObjectId
+                ObjectId objectId;
+                try {
+                    objectId = new ObjectId(id); // Convert String to ObjectId
+                } catch (IllegalArgumentException e) {
+                    notFoundIds.add(id); // If invalid, add to notFoundIds
+                    continue; // Skip this ID
+                }
+
+                Optional<Vocabulary> vocabulary = vocabRepo.findById(objectId);
+                if (vocabulary.isPresent()) {
+                    vocabRepo.deleteById(objectId);
+                    deletedIds.add(id); // Successfully deleted
+                } else {
+                    notFoundIds.add(id); // Not found
+                }
+            }
+
+            response.put("code", HttpStatus.OK.value());
+            response.put("message", "Deletion process completed");
+            response.put("deletedIds", deletedIds);
+            response.put("notFoundIds", notFoundIds);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("code", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            response.put("message", "An error occurred while deleting vocabularies");
+            response.put("deletedIds", deletedIds);
+            response.put("notFoundIds", notFoundIds);
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+
+
+
+
+    @PutMapping("edit/{id}")
+    public ResponseEntity<Map<String, Object>> editVocabulary(@PathVariable("id") String id, @RequestBody Vocabulary vocabulary) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            // Check if vocabulary with the given id exists
+            ObjectId objectId = new ObjectId(id);
+
+            Optional<Vocabulary> existingVocabulary = vocabRepo.findById(objectId);
+            if (existingVocabulary.isEmpty()) {
+                response.put("code", HttpStatus.NOT_FOUND.value());
+                response.put("message", "Vocabulary not found");
+                response.put("data", null);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+
+            // Update the vocabulary details
+            Vocabulary vocabToUpdate = existingVocabulary.get();
+            vocabToUpdate.setText(vocabulary.getText());  // Example field
+            vocabToUpdate.setPronunciation(vocabulary.getPronunciation());
+            vocabToUpdate.setExample(vocabulary.getExample());
+            vocabToUpdate.setMeaning(vocabulary.getMeaning());
+            vocabToUpdate.setTopic(vocabulary.getTopic());
+            // Set other fields here as necessary
+
+            Vocabulary updatedVocabulary = vocabRepo.save(vocabToUpdate);
+
+            response.put("code", HttpStatus.OK.value());
+            response.put("message", "Vocabulary updated successfully");
+            response.put("data", updatedVocabulary);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            response.put("code", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            response.put("message", "An error occurred while updating the vocabulary");
+            response.put("data", null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+
 
     @GetMapping("all")
     public ResponseEntity<?> getAll() {

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Repository
 public interface QuestionRepo extends MongoRepository<Question, ObjectId> {
@@ -22,4 +23,7 @@ public interface QuestionRepo extends MongoRepository<Question, ObjectId> {
             "{ '$group': { '_id': '$stt', 'questions': { '$push': '$$ROOT' } } }"
     })
     List<Map<String, Object>> groupByStt(String part);
+
+    @Query("{ '_id': ?0 }")
+    Optional<Question> findById(ObjectId id);
 }

@@ -86,7 +86,8 @@ public class QuestionController {
 
             // Chuyển đổi chuỗi JSON thành danh sách options
             ObjectMapper mapper = new ObjectMapper();
-            List<com.toeic.toeic_app.model.Question.Option> options = Arrays.asList(mapper.readValue(optionsJson, com.toeic.toeic_app.model.Question.Option[].class));
+            List<com.toeic.toeic_app.model.Question.Option> options =
+                    Arrays.asList(mapper.readValue(optionsJson, com.toeic.toeic_app.model.Question.Option[].class));
             question.setOptions(options);
 
             Date currentDate = new Date();
@@ -96,14 +97,20 @@ public class QuestionController {
             // Lưu câu hỏi vào database
             Question savedQuestion = questionRepo.save(question);
 
-            return ResponseEntity.status(HttpStatus.OK).body(new ResponseWrapper<>(savedQuestion, 1));
+            // Trả về câu hỏi đã lưu dưới dạng JSON
+            return ResponseEntity.status(HttpStatus.OK).body(Map.of("status", 1, "data", savedQuestion));
 
         } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ResponseWrapper<>(null, 3)); // Đổi về INTERNAL_SERVER_ERROR
+            // Trả về lỗi nội bộ với thông điệp JSON
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("status", 3, "message", "Internal server error: " + e.getMessage()));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ResponseWrapper<>(null, 2)); // Đổi về BAD_REQUEST
+            // Trả về lỗi yêu cầu không hợp lệ với thông điệp JSON
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("status", 2, "message", "Bad request: " + e.getMessage()));
         }
     }
+
 
 
 
@@ -163,30 +170,10 @@ public class QuestionController {
             }
 
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseWrapper<>(null, 3)); // Lỗi không xác định
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -432,64 +419,106 @@ public class QuestionController {
 
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<?> updateQuestion(@PathVariable("id") String id, @RequestBody Question questionDetails) {
+    public ResponseEntity<?> updateQuestion(
+            @PathVariable String id,
+            @RequestParam(value = "file", required = false) MultipartFile file,
+            @RequestParam(value = "questionImg", required = false) MultipartFile questionImg,
+            @RequestParam("test") String test,
+            @RequestParam("part") String part,
+            @RequestParam("questionText") String questionText,
+            @RequestParam("options") String optionsJson,
+            @RequestParam("stt") String stt) {
         try {
-            if (!ObjectId.isValid(id)) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid ID format.");
+            // Base server URL
+            String serverBaseUrl = "http://18.216.169.143:8081";
+
+            // Fetch the existing question
+            ObjectId objectId = new ObjectId(id);
+            Question question = questionRepo.findById(objectId)
+                    .orElseThrow(() -> new IllegalArgumentException("Question with ID " + id + " not found"));
+
+            // Update question properties
+            question.setTest(test);
+            question.setPart(part);
+            question.setQuestionText(questionText);
+            question.setStt(stt);
+
+            // Process audio file if provided
+            if (file != null && !file.isEmpty()) {
+                String originalFileName = file.getOriginalFilename();
+                if (originalFileName != null) {
+                    String sanitizedFileName = originalFileName.replaceAll("[^a-zA-Z0-9\\.\\-_]", "_");
+                    String audioFileName = new ObjectId().toString() + "_" + sanitizedFileName;
+                    Path audioFilePath = Paths.get(AUDIO_DIRECTORY + File.separator + audioFileName);
+                    Files.write(audioFilePath, file.getBytes());
+                    String audioFileUrl = serverBaseUrl + "/audio/" + audioFileName;
+                    question.setQuestionAudio(audioFileUrl);
+                }
             }
-            Optional<Question> questionOptional = questionRepo.findById(new ObjectId(id));
-            if (questionOptional.isPresent()) {
-                Question question = questionOptional.get();
-                question.setTest(questionDetails.getTest());
-                question.setPart(questionDetails.getPart());
-                question.setQuestionText(questionDetails.getQuestionText());
-                question.setQuestionImg(questionDetails.getQuestionImg());
-                question.setQuestionAudio(questionDetails.getQuestionAudio());
-                question.setOptions(questionDetails.getOptions());
-                question.setUpdatedDate(new Date());
-                Question updatedQuestion = questionRepo.save(question);
-                return ResponseEntity.status(HttpStatus.OK).body(updatedQuestion);
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Question not found.");
+
+            // Process question image if provided
+            if (questionImg != null && !questionImg.isEmpty()) {
+                String originalImgName = questionImg.getOriginalFilename();
+                if (originalImgName != null) {
+                    String sanitizedImgName = originalImgName.replaceAll("[^a-zA-Z0-9\\.\\-_]", "_");
+                    String imgFileName = new ObjectId().toString() + "_" + sanitizedImgName;
+                    Path imgFilePath = Paths.get(IMG_DIRECTORY + File.separator + imgFileName);
+                    Files.write(imgFilePath, questionImg.getBytes());
+                    String imgFileUrl = serverBaseUrl + "/img/" + imgFileName;
+                    question.setQuestionImg(imgFileUrl);
+                }
             }
+
+            // Update options
+            ObjectMapper mapper = new ObjectMapper();
+            List<com.toeic.toeic_app.model.Question.Option> options =
+                    Arrays.asList(mapper.readValue(optionsJson, com.toeic.toeic_app.model.Question.Option[].class));
+            question.setOptions(options);
+
+            // Set updated date
+            question.setUpdatedDate(new Date());
+
+            // Save the updated question to the database
+            Question updatedQuestion = questionRepo.save(question);
+
+            // Return the updated question
+            return ResponseEntity.status(HttpStatus.OK).body(Map.of("status", 1, "data", updatedQuestion));
+
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("status", 3, "message", "Internal server error: " + e.getMessage()));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid data provided.");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while updating the question.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("status", 2, "message", "Bad request: " + e.getMessage()));
         }
     }
 
 
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Void> deleteQuestion(@PathVariable("id") String id) {
-        Optional<Question> questionOptional = questionRepo.findById(new ObjectId(id));
-        if (questionOptional.isPresent()) {
-            questionRepo.delete(questionOptional.get());
-            return ResponseEntity.noContent().build();
+
+
+    @DeleteMapping("/delete")
+    public ResponseEntity<Map<String, Object>> deleteQuestions(@RequestParam("ids") List<String> ids) {
+        List<ObjectId> objectIds = ids.stream()
+                .map(ObjectId::new) // Chuyển đổi danh sách String thành danh sách ObjectId
+                .collect(Collectors.toList());
+
+        // Tìm tất cả câu hỏi với các ObjectId
+        List<Question> questionsToDelete = questionRepo.findAllById(objectIds);
+
+        if (!questionsToDelete.isEmpty()) {
+            questionRepo.deleteAll(questionsToDelete); // Xóa tất cả câu hỏi tìm thấy
+
+            // Tạo phản hồi JSON
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", questionsToDelete.size() + " question(s) deleted.");
+            return ResponseEntity.ok(response); // Trả về trạng thái 200 OK với phản hồi JSON
         } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            // Tạo phản hồi JSON cho trường hợp không tìm thấy câu hỏi
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "error");
+            response.put("message", "No questions found with the provided IDs.");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response); // Trả về trạng thái 404 với phản hồi JSON
         }
     }
-
-//    @GetMapping("/byPart/{part}")
-//    public ResponseEntity<?> findQuestionsByPart(@PathVariable("part") String part) {
-//        try {
-//            int partNumber;
-//            try {
-//                partNumber = Integer.parseInt(part);
-//            } catch (NumberFormatException e) {
-//                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Part must be a valid number.");
-//            }
-//            List<?> questions = questionRepo.findQuestionsByPart(partNumber);
-//            if (questions.isEmpty()) {
-//                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No questions found for the specified part.");
-//            }
-//            return ResponseEntity.status(HttpStatus.OK).body(questions);
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while retrieving the questions.");
-//        }
-//    }
-
-
-
 }
