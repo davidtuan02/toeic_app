@@ -39,7 +39,26 @@ public class UserController {
         userRepo.save(user);
         Map<String, String> content = new HashMap<>();
         content.put("code", code);
-        ResponseWrapper<Map<String, String>> response = new ResponseWrapper<>(content, 1);
+        ResponseWrapper<Map<String, String>> response = new ResponseWrapper<>(null, 1);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @PostMapping("/auth/send-code")
+    public ResponseEntity<?> sendAuthCode(@RequestParam String email) {
+        Optional<User> optionalUser = userRepo.findByEmail(email);
+        if (optionalUser.isEmpty()) {
+            ResponseWrapper<?> response = new ResponseWrapper<>(null, 2);
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        }
+        User user = optionalUser.get();
+        String code = generateVerificationCode();
+        sendAuthCode(email, code);
+        user.setResetCode(code);
+        user.setResetCodeExpiry(new Date(System.currentTimeMillis() + 15 * 60 * 1000));
+        userRepo.save(user);
+        Map<String, String> content = new HashMap<>();
+        content.put("code", code);
+        ResponseWrapper<Map<String, String>> response = new ResponseWrapper<>(null, 1);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
@@ -55,6 +74,21 @@ public class UserController {
         message.setTo(to);
         message.setSubject("Password Reset Code");
         message.setText("Your password reset code is: " + code);
+        emailSender.send(message);
+    }
+
+    private void sendAuthCode(String to, String code) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(to);
+        message.setSubject("Verification Code");
+        message.setText(
+                "Hello,\n\n" +
+                        "You have requested a verification code. Please use the following code to proceed:\n\n" +
+                        code + "\n\n" +
+                        "This code is valid for 15 minutes. If you did not request this, please ignore this email.\n\n" +
+                        "Best regards,\n" +
+                        "Your Support Team"
+        );
         emailSender.send(message);
     }
 
