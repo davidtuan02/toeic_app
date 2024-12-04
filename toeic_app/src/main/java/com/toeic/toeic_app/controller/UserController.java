@@ -122,8 +122,18 @@ public class UserController {
             Optional<User> userOptional = userRepo.findByEmail(loginRequest.getEmail());
             if (userOptional.isPresent()) {
                 User user = userOptional.get();
-                String hashedPassword = DigestUtils.md5DigestAsHex(loginRequest.getPassword().getBytes());
-                if (hashedPassword.equals(user.getPassword())) {
+                String inputPassword = loginRequest.getPassword();
+
+// Kiểm tra nếu mật khẩu đầu vào đã là mã băm
+                String passwordToCompare;
+                if (isMD5Hash(inputPassword)) {
+                    passwordToCompare = inputPassword; // Mật khẩu đã băm, dùng trực tiếp
+                } else {
+                    passwordToCompare = DigestUtils.md5DigestAsHex(inputPassword.getBytes()); // Băm mật khẩu trước khi so sánh
+                }
+
+// So sánh mật khẩu
+                if (passwordToCompare.equals(user.getPassword())) {
                     ResponseWrapper<User> response = new ResponseWrapper<>(user, 1);
                     return ResponseEntity.status(HttpStatus.OK).body(response);
                 } else {
@@ -139,7 +149,6 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.OK).body(response);
         }
     }
-
 
     @PostMapping("/register")
     public ResponseEntity<Map<String, Object>> saveUser(@RequestBody User user) {
@@ -162,6 +171,7 @@ public class UserController {
             if (user.getEmail() == null || user.getEmail().isEmpty()) {
                 response.put("status", 2);
                 response.put("message", "Email is required");
+                
                 return ResponseEntity.status(HttpStatus.OK).body(response);
             }
             if (user.getPassword() == null || user.getPassword().isEmpty()) {
@@ -174,7 +184,11 @@ public class UserController {
             Date currentDate = new Date();
             user.setCreatedDate(currentDate);
             user.setUpdatedDate(currentDate);
-            user.setPassword(DigestUtils.md5DigestAsHex(user.getPassword().getBytes()));
+            String password = user.getPassword();
+            if (!isMD5Hash(password)) {
+                password = DigestUtils.md5DigestAsHex(password.getBytes());
+            }
+            user.setPassword(password);
             user.setRole("user");
 
             // Save the new user
@@ -190,7 +204,9 @@ public class UserController {
         }
     }
 
-
+    private boolean isMD5Hash(String str) {
+        return str != null && str.matches("^[a-fA-F0-9]{32}$");
+    }
 
 
     @GetMapping("/all")
