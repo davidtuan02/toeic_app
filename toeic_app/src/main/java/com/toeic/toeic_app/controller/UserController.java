@@ -2,6 +2,7 @@ package com.toeic.toeic_app.controller;
 
 import com.toeic.toeic_app.model.User;
 import com.toeic.toeic_app.repository.UserRepo;
+import com.toeic.toeic_app.util.JwtUtil;
 import com.toeic.toeic_app.wrapper.ResponseWrapper;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +36,7 @@ public class UserController {
         String code = generateVerificationCode();
         sendEmail(email, code);
         user.setResetCode(code);
-        user.setResetCodeExpiry(new Date(System.currentTimeMillis() + 15 * 60 * 1000));
+        user.setResetCodeExpiry(new Date(System.currentTimeMillis() + 2 * 60 * 1000));
         userRepo.save(user);
         Map<String, String> content = new HashMap<>();
         content.put("code", code);
@@ -117,14 +118,14 @@ public class UserController {
 
 
     @PostMapping("/login")
-    public ResponseEntity<ResponseWrapper<User>> login(@RequestBody User loginRequest) {
+    public ResponseEntity<ResponseWrapper<Object>> login(@RequestBody User loginRequest) {
         try {
             Optional<User> userOptional = userRepo.findByEmail(loginRequest.getEmail());
             if (userOptional.isPresent()) {
                 User user = userOptional.get();
                 String inputPassword = loginRequest.getPassword();
 
-// Kiểm tra nếu mật khẩu đầu vào đã là mã băm
+                // Kiểm tra nếu mật khẩu đầu vào đã là mã băm
                 String passwordToCompare;
                 if (isMD5Hash(inputPassword)) {
                     passwordToCompare = inputPassword; // Mật khẩu đã băm, dùng trực tiếp
@@ -132,23 +133,33 @@ public class UserController {
                     passwordToCompare = DigestUtils.md5DigestAsHex(inputPassword.getBytes()); // Băm mật khẩu trước khi so sánh
                 }
 
-// So sánh mật khẩu
+                // So sánh mật khẩu
                 if (passwordToCompare.equals(user.getPassword())) {
-                    ResponseWrapper<User> response = new ResponseWrapper<>(user, 1);
+                    String token = JwtUtil.generateToken(user.getEmail());
+                    Map<String, Object> responsee = new HashMap<>();
+                    responsee.put("token", token);
+
+                    // Đổi kiểu generic của ResponseWrapper thành Object
+                    ResponseWrapper<Object> response = new ResponseWrapper<>(responsee, 1); // Thành công
                     return ResponseEntity.status(HttpStatus.OK).body(response);
+
                 } else {
-                    ResponseWrapper<User> response = new ResponseWrapper<>(null, 2);
+                    // Sai mật khẩu
+                    ResponseWrapper<Object> response = new ResponseWrapper<>(null, 2); // Sai mật khẩu
                     return ResponseEntity.status(HttpStatus.OK).body(response);
                 }
             } else {
-                ResponseWrapper<User> response = new ResponseWrapper<>(null, 2);
+                // Không tìm thấy người dùng
+                ResponseWrapper<Object> response = new ResponseWrapper<>(null, 2); // Không tìm thấy user
                 return ResponseEntity.status(HttpStatus.OK).body(response);
             }
         } catch (Exception e) {
-            ResponseWrapper<User> response = new ResponseWrapper<>(null, 3);
-            return ResponseEntity.status(HttpStatus.OK).body(response);
+            // Lỗi hệ thống
+            ResponseWrapper<Object> response = new ResponseWrapper<>(null, 3); // Lỗi hệ thống
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
+
 
     @PostMapping("/register")
     public ResponseEntity<Map<String, Object>> saveUser(@RequestBody User user) {
