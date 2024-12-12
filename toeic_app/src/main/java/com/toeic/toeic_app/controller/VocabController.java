@@ -23,10 +23,10 @@ public class VocabController {
         Map<String, Object> response = new HashMap<>();
         try {
             if (vocabulary == null) {
-                response.put("code", HttpStatus.BAD_REQUEST.value());
+                response.put("code", HttpStatus.OK.value());
                 response.put("message", "Vocabulary data is missing");
                 response.put("data", null);
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+                return ResponseEntity.status(HttpStatus.OK).body(response);
             }
 
             Vocabulary createdVocabulary = vocabRepo.save(vocabulary);
@@ -36,10 +36,10 @@ public class VocabController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            response.put("code", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            response.put("code", HttpStatus.OK.value());
             response.put("message", "An error occurred while saving the vocabulary");
             response.put("data", null);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            return ResponseEntity.status(HttpStatus.OK).body(response);
         }
     }
 
@@ -77,12 +77,12 @@ public class VocabController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            response.put("code", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            response.put("code", HttpStatus.OK.value());
             response.put("message", "An error occurred while deleting vocabularies");
             response.put("deletedIds", deletedIds);
             response.put("notFoundIds", notFoundIds);
 
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            return ResponseEntity.status(HttpStatus.OK).body(response);
         }
     }
 
@@ -99,10 +99,10 @@ public class VocabController {
 
             Optional<Vocabulary> existingVocabulary = vocabRepo.findById(objectId);
             if (existingVocabulary.isEmpty()) {
-                response.put("code", HttpStatus.NOT_FOUND.value());
+                response.put("code", HttpStatus.OK.value());
                 response.put("message", "Vocabulary not found");
                 response.put("data", null);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+                return ResponseEntity.status(HttpStatus.OK).body(response);
             }
 
             // Update the vocabulary details
@@ -122,10 +122,10 @@ public class VocabController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            response.put("code", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            response.put("code", HttpStatus.OK.value());
             response.put("message", "An error occurred while updating the vocabulary");
             response.put("data", null);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            return ResponseEntity.status(HttpStatus.OK).body(response);
         }
     }
 

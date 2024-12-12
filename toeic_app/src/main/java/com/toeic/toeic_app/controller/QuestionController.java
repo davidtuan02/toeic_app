@@ -102,11 +102,11 @@ public class QuestionController {
 
         } catch (IOException e) {
             // Trả về lỗi nội bộ với thông điệp JSON
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            return ResponseEntity.status(HttpStatus.OK)
                     .body(Map.of("status", 3, "message", "Internal server error: " + e.getMessage()));
         } catch (IllegalArgumentException e) {
             // Trả về lỗi yêu cầu không hợp lệ với thông điệp JSON
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            return ResponseEntity.status(HttpStatus.OK)
                     .body(Map.of("status", 2, "message", "Bad request: " + e.getMessage()));
         }
     }
@@ -328,7 +328,7 @@ public class QuestionController {
             Optional<Question> optionalQuestion = questionRepo.findById(objectId);
 
             if (!optionalQuestion.isPresent()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                return ResponseEntity.status(HttpStatus.OK).body(null);
             }
 
             Question question = optionalQuestion.get();
@@ -337,7 +337,7 @@ public class QuestionController {
             // Kiểm tra xem file có tồn tại không
             Path path = Paths.get(audioFilePath);
             if (!Files.exists(path)) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                return ResponseEntity.status(HttpStatus.OK).body(null);
             }
 
             FileSystemResource fileResource = new FileSystemResource(path.toFile());
@@ -348,7 +348,7 @@ public class QuestionController {
                     .body(fileResource);
 
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            return ResponseEntity.status(HttpStatus.OK).body(null);
         }
     }
 
@@ -361,7 +361,7 @@ public class QuestionController {
             Optional<Question> optionalQuestion = questionRepo.findById(objectId);
 
             if (!optionalQuestion.isPresent()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("không có question");
+                return ResponseEntity.status(HttpStatus.OK).body("không có question");
             }
 
             Question question = optionalQuestion.get();
@@ -377,10 +377,10 @@ public class QuestionController {
                         .contentType(MediaType.IMAGE_JPEG) // Hoặc MediaType.IMAGE_PNG nếu là PNG
                         .body(fileResource);
             } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("không có file ảnh");
+                return ResponseEntity.status(HttpStatus.OK).body("không có file ảnh");
             }
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid ID format");
+            return ResponseEntity.status(HttpStatus.OK).body("Invalid ID format");
         }
     }
 
@@ -389,11 +389,11 @@ public class QuestionController {
         try {
             List<Question> questions = questionRepo.findAll();
             if (questions.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NO_CONTENT).body("No questions found.");
+                return ResponseEntity.status(HttpStatus.OK).body("No questions found.");
             }
             return ResponseEntity.status(HttpStatus.OK).body(questions);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while retrieving questions.");
+            return ResponseEntity.status(HttpStatus.OK).body("An error occurred while retrieving questions.");
         }
     }
 
@@ -402,18 +402,18 @@ public class QuestionController {
     public ResponseEntity<?> getQuestionById(@PathVariable("id") String id) {
         try {
             if (!ObjectId.isValid(id)) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid ID format.");
+                return ResponseEntity.status(HttpStatus.OK).body("Invalid ID format.");
             }
             Optional<Question> question = questionRepo.findById(new ObjectId(id));
             if (question.isPresent()) {
                 return ResponseEntity.status(HttpStatus.OK).body(question.get());
             } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Question not found.");
+                return ResponseEntity.status(HttpStatus.OK).body("Question not found.");
             }
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid data provided.");
+            return ResponseEntity.status(HttpStatus.OK).body("Invalid data provided.");
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while retrieving the question.");
+            return ResponseEntity.status(HttpStatus.OK).body("An error occurred while retrieving the question.");
         }
     }
 
@@ -485,10 +485,10 @@ public class QuestionController {
             return ResponseEntity.status(HttpStatus.OK).body(Map.of("status", 1, "data", updatedQuestion));
 
         } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            return ResponseEntity.status(HttpStatus.OK)
                     .body(Map.of("status", 3, "message", "Internal server error: " + e.getMessage()));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            return ResponseEntity.status(HttpStatus.OK)
                     .body(Map.of("status", 2, "message", "Bad request: " + e.getMessage()));
         }
     }
@@ -518,7 +518,7 @@ public class QuestionController {
             Map<String, Object> response = new HashMap<>();
             response.put("status", "error");
             response.put("message", "No questions found with the provided IDs.");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response); // Trả về trạng thái 404 với phản hồi JSON
+            return ResponseEntity.status(HttpStatus.OK).body(response); // Trả về trạng thái 404 với phản hồi JSON
         }
     }
 }

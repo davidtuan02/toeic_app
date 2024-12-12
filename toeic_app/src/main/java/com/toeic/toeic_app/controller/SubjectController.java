@@ -32,7 +32,7 @@ public class SubjectController {
             return ResponseEntity.ok(new ResponseWrapper<>(subjects, 1));
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseWrapper<>(null, 3));
         }
     }
@@ -44,7 +44,7 @@ public class SubjectController {
             Subject savedSubject = subjectRepo.save(subject);
             return ResponseEntity.ok(new ResponseWrapper<>(savedSubject, 1));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseWrapper<>(null, 3));
         }
     }
@@ -57,11 +57,11 @@ public class SubjectController {
             if (subject.isPresent()) {
                 return ResponseEntity.ok(new ResponseWrapper<>(subject.get(), 1));
             } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                return ResponseEntity.status(HttpStatus.OK)
                         .body(new ResponseWrapper<>(null, 2));
             }
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseWrapper<>(null, 3));
         }
     }
@@ -78,11 +78,11 @@ public class SubjectController {
                 Subject savedSubject = subjectRepo.save(subject);
                 return ResponseEntity.ok(new ResponseWrapper<>(savedSubject, 1));
             } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                return ResponseEntity.status(HttpStatus.OK)
                         .body(new ResponseWrapper<>(null, 2));
             }
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseWrapper<>(null, 3));
         }
     }
@@ -96,11 +96,11 @@ public class SubjectController {
                 subjectRepo.deleteById(new ObjectId(id));
                 return ResponseEntity.ok(new ResponseWrapper<>(null, 1));
             } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                return ResponseEntity.status(HttpStatus.OK)
                         .body(new ResponseWrapper<>(null, 2));
             }
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseWrapper<>(null, 3));
         }
     }

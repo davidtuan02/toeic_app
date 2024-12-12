@@ -156,7 +156,7 @@ public class UserController {
         } catch (Exception e) {
             // Lỗi hệ thống
             ResponseWrapper<Object> response = new ResponseWrapper<>(null, 3); // Lỗi hệ thống
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            return ResponseEntity.status(HttpStatus.OK).body(response);
         }
     }
 
@@ -211,7 +211,7 @@ public class UserController {
         } catch (Exception e) {
             response.put("status", 3);
             response.put("message", "An error occurred during registration: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            return ResponseEntity.status(HttpStatus.OK).body(response);
         }
     }
 
@@ -225,7 +225,7 @@ public class UserController {
         try {
             List<User> users = userRepo.findAll();
             if (users.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
+                return ResponseEntity.status(HttpStatus.OK).body(null);
             }
 
             // Reverse the list order
@@ -233,7 +233,7 @@ public class UserController {
 
             return ResponseEntity.status(HttpStatus.OK).body(users);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return ResponseEntity.status(HttpStatus.OK).body(null);
         }
     }
 
@@ -245,12 +245,12 @@ public class UserController {
             if (user.isPresent()) {
                 return ResponseEntity.status(HttpStatus.OK).body(user.get());
             } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
+                return ResponseEntity.status(HttpStatus.OK).body("User not found.");
             }
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid user ID format.");
+            return ResponseEntity.status(HttpStatus.OK).body("Invalid user ID format.");
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while fetching the user.");
+            return ResponseEntity.status(HttpStatus.OK).body("An error occurred while fetching the user.");
         }
     }
 
@@ -291,18 +291,18 @@ public class UserController {
 
                 return ResponseEntity.status(HttpStatus.OK).body(response);
             } else {
-                response.put("status", HttpStatus.NOT_FOUND.value());
+                response.put("status", HttpStatus.OK.value());
                 response.put("message", "User not found.");
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+                return ResponseEntity.status(HttpStatus.OK).body(response);
             }
         } catch (IllegalArgumentException e) {
-            response.put("status", HttpStatus.BAD_REQUEST.value());
+            response.put("status", HttpStatus.OK.value());
             response.put("message", "Invalid user ID format or invalid data.");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            return ResponseEntity.status(HttpStatus.OK).body(response);
         } catch (Exception e) {
-            response.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
+            response.put("status", HttpStatus.OK.value());
             response.put("message", "An error occurred while updating the user.");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            return ResponseEntity.status(HttpStatus.OK).body(response);
         }
     }
 
