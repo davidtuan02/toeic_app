@@ -117,15 +117,58 @@ public class UserController {
     }
 
 
+//    @PostMapping("/login")
+//    public ResponseEntity<ResponseWrapper<Object>> login(@RequestBody User loginRequest) {
+//        try {
+//            Optional<User> userOptional = userRepo.findByEmail(loginRequest.getEmail());
+//            if (userOptional.isPresent()) {
+//                User user = userOptional.get();
+//                String inputPassword = loginRequest.getPassword();
+//
+//                // Kiểm tra nếu mật khẩu đầu vào đã là mã băm
+//                String passwordToCompare;
+//                if (isMD5Hash(inputPassword)) {
+//                    passwordToCompare = inputPassword; // Mật khẩu đã băm, dùng trực tiếp
+//                } else {
+//                    passwordToCompare = DigestUtils.md5DigestAsHex(inputPassword.getBytes()); // Băm mật khẩu trước khi so sánh
+//                }
+//
+//                // So sánh mật khẩu
+//                if (passwordToCompare.equals(user.getPassword())) {
+//                    String token = JwtUtil.generateToken(user.getEmail());
+//                    Map<String, Object> responsee = new HashMap<>();
+//                    responsee.put("token", token);
+//
+//                    // Đổi kiểu generic của ResponseWrapper thành Object
+//                    ResponseWrapper<Object> response = new ResponseWrapper<>(responsee, 1); // Thành công
+//                    return ResponseEntity.status(HttpStatus.OK).body(response);
+//
+//                } else {
+//                    // Sai mật khẩu
+//                    ResponseWrapper<Object> response = new ResponseWrapper<>(null, 2); // Sai mật khẩu
+//                    return ResponseEntity.status(HttpStatus.OK).body(response);
+//                }
+//            } else {
+//                // Không tìm thấy người dùng
+//                ResponseWrapper<Object> response = new ResponseWrapper<>(null, 2); // Không tìm thấy user
+//                return ResponseEntity.status(HttpStatus.OK).body(response);
+//            }
+//        } catch (Exception e) {
+//            // Lỗi hệ thống
+//            ResponseWrapper<Object> response = new ResponseWrapper<>(null, 3); // Lỗi hệ thống
+//            return ResponseEntity.status(HttpStatus.OK).body(response);
+//        }
+//    }
+
     @PostMapping("/login")
-    public ResponseEntity<ResponseWrapper<Object>> login(@RequestBody User loginRequest) {
+    public ResponseEntity<ResponseWrapper<User>> login(@RequestBody User loginRequest) {
         try {
             Optional<User> userOptional = userRepo.findByEmail(loginRequest.getEmail());
             if (userOptional.isPresent()) {
                 User user = userOptional.get();
                 String inputPassword = loginRequest.getPassword();
 
-                // Kiểm tra nếu mật khẩu đầu vào đã là mã băm
+// Kiểm tra nếu mật khẩu đầu vào đã là mã băm
                 String passwordToCompare;
                 if (isMD5Hash(inputPassword)) {
                     passwordToCompare = inputPassword; // Mật khẩu đã băm, dùng trực tiếp
@@ -133,33 +176,23 @@ public class UserController {
                     passwordToCompare = DigestUtils.md5DigestAsHex(inputPassword.getBytes()); // Băm mật khẩu trước khi so sánh
                 }
 
-                // So sánh mật khẩu
+// So sánh mật khẩu
                 if (passwordToCompare.equals(user.getPassword())) {
-                    String token = JwtUtil.generateToken(user.getEmail());
-                    Map<String, Object> responsee = new HashMap<>();
-                    responsee.put("token", token);
-
-                    // Đổi kiểu generic của ResponseWrapper thành Object
-                    ResponseWrapper<Object> response = new ResponseWrapper<>(responsee, 1); // Thành công
+                    ResponseWrapper<User> response = new ResponseWrapper<>(user, 1);
                     return ResponseEntity.status(HttpStatus.OK).body(response);
-
                 } else {
-                    // Sai mật khẩu
-                    ResponseWrapper<Object> response = new ResponseWrapper<>(null, 2); // Sai mật khẩu
+                    ResponseWrapper<User> response = new ResponseWrapper<>(null, 2);
                     return ResponseEntity.status(HttpStatus.OK).body(response);
                 }
             } else {
-                // Không tìm thấy người dùng
-                ResponseWrapper<Object> response = new ResponseWrapper<>(null, 2); // Không tìm thấy user
+                ResponseWrapper<User> response = new ResponseWrapper<>(null, 2);
                 return ResponseEntity.status(HttpStatus.OK).body(response);
             }
         } catch (Exception e) {
-            // Lỗi hệ thống
-            ResponseWrapper<Object> response = new ResponseWrapper<>(null, 3); // Lỗi hệ thống
+            ResponseWrapper<User> response = new ResponseWrapper<>(null, 3);
             return ResponseEntity.status(HttpStatus.OK).body(response);
         }
     }
-
 
     @PostMapping("/register")
     public ResponseEntity<Map<String, Object>> saveUser(@RequestBody User user) {
