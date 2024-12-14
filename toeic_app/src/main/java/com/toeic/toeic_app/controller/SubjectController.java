@@ -2,6 +2,7 @@ package com.toeic.toeic_app.controller;
 
 import com.toeic.toeic_app.model.Subject;
 import com.toeic.toeic_app.model.User;
+import com.toeic.toeic_app.repository.QuizQuestionRepo;
 import com.toeic.toeic_app.repository.SubjectRepo;
 import com.toeic.toeic_app.repository.UserRepo;
 import com.toeic.toeic_app.util.JwtUtil;
@@ -24,6 +25,26 @@ public class SubjectController {
 
     @Autowired
     private SubjectRepo subjectRepo;
+
+    @Autowired
+    private QuizQuestionRepo questionRepo;
+
+    @GetMapping("/by-user/{userId}")
+    public ResponseEntity<ResponseWrapper<List<Subject>>> getSubjectsByUserId(@PathVariable("userId") String userId) {
+        try {
+            List<Subject> subjects = subjectRepo.findByUserId(userId);
+            if (!subjects.isEmpty()) {
+                return ResponseEntity.ok(new ResponseWrapper<>(subjects, 1));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseWrapper<>(null, 2));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseWrapper<>(null, 3));
+        }
+    }
 
     @GetMapping("/all")
     public ResponseEntity<ResponseWrapper<List<Subject>>> getAllSubjects() {

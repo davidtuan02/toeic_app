@@ -11,4 +11,5 @@ import java.util.List;
 @Repository
 public interface QuizQuestionRepo extends MongoRepository<QuizQuestion, ObjectId> {
     List<QuizQuestion> findBySubjectId(ObjectId subjectId);
+    long countBySubjectId(ObjectId subjectId);
 }

@@ -11,5 +11,5 @@ import java.util.List;
 @Repository
 public interface
 HistoryRepo extends MongoRepository<History, ObjectId> {
-    List<History> findByUserId(ObjectId userId);
+    List<History> findByUserId(String userId);
 }

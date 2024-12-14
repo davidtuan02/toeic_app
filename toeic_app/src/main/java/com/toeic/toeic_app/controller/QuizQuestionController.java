@@ -1,8 +1,10 @@
 package com.toeic.toeic_app.controller;
 
 import com.toeic.toeic_app.model.QuizQuestion;
+import com.toeic.toeic_app.model.Subject;
 import com.toeic.toeic_app.repository.QuizQuestionRepo;
 import com.toeic.toeic_app.repository.QuizUserRepo;
+import com.toeic.toeic_app.repository.SubjectRepo;
 import com.toeic.toeic_app.wrapper.ResponseWrapper;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,11 +22,14 @@ public class QuizQuestionController {
     @Autowired
     private QuizQuestionRepo questionRepo;
 
+    @Autowired
+    private SubjectRepo subjectRepo;
+
     @GetMapping("/by-subject/{subjectId}")
-    public ResponseEntity<ResponseWrapper<List<QuizQuestion>>> getQuizQuestionsBySubjectId(@PathVariable("subjectId") String subjectId) {
+    public ResponseEntity<ResponseWrapper<List<QuizQuestion>>> getQuizQuestionsBySubjectId(@PathVariable("subjectId") ObjectId subjectId) {
         try {
-            ObjectId subjectObjectId = new ObjectId(subjectId);
-            List<QuizQuestion> questions = questionRepo.findBySubjectId(subjectObjectId);
+//            ObjectId subjectObjectId = new ObjectId(subjectId);
+            List<QuizQuestion> questions = questionRepo.findBySubjectId(subjectId);
             if (!questions.isEmpty()) {
                 return ResponseEntity.ok(new ResponseWrapper<>(questions, 1));
             } else {
@@ -54,11 +59,24 @@ public class QuizQuestionController {
     @PostMapping("/create")
     public ResponseEntity<ResponseWrapper<QuizQuestion>> createQuizQuestion(@RequestBody QuizQuestion quizQuestion) {
         try {
+            // Save the new quiz question
             QuizQuestion savedQuestion = questionRepo.save(quizQuestion);
+
+            // Update the numberQuestion in the corresponding subject
+            if (quizQuestion.getSubjectId() != null) {
+                Optional<Subject> subjectOptional = subjectRepo.findById(quizQuestion.getSubjectId());
+                if (subjectOptional.isPresent()) {
+                    Subject subject = subjectOptional.get();
+                    long count = questionRepo.countBySubjectId(subject.getId());
+                    subject.setNumberQuestion(String.valueOf(count));
+                    subjectRepo.save(subject);
+                }
+            }
+
             return ResponseEntity.ok(new ResponseWrapper<>(savedQuestion, 1));
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.OK)
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ResponseWrapper<>(null, 3));
         }
     }

@@ -17,5 +17,7 @@ public class Subject {
     @Id
     @JsonSerialize(using = ToStringSerializer.class)
     private ObjectId id;
+    private String userId;
     private String subjectName;
+    private String numberQuestion;
 }

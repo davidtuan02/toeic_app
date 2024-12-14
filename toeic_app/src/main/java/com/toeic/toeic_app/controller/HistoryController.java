@@ -19,7 +19,7 @@ public class HistoryController {
     private HistoryRepo historyRepo;
 
     @GetMapping("/by-user/{userId}")
-    public ResponseEntity<List<History>> getHistoriesByUserId(@PathVariable ObjectId userId) {
+    public ResponseEntity<List<History>> getHistoriesByUserId(@PathVariable String userId) {
         List<History> histories = historyRepo.findByUserId(userId);
         return ResponseEntity.ok(histories);
     }

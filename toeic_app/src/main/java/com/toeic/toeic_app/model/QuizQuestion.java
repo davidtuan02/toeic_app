@@ -19,7 +19,6 @@ public class QuizQuestion {
     @Id
     @JsonSerialize(using = ToStringSerializer.class)
     private ObjectId id;
-    @JsonSerialize(using = ToStringSerializer.class)
     private ObjectId subjectId; //id cua bang Subject
     private String questionText;
     private List<Question.Option> options;

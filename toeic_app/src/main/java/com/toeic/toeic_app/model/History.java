@@ -19,10 +19,8 @@ public class History {
     @Id
     @JsonSerialize(using = ToStringSerializer.class)
     private ObjectId id;
-    @JsonSerialize(using = ToStringSerializer.class)
-    private ObjectId userId;
-    @JsonSerialize(using = ToStringSerializer.class)
-    private ObjectId subjectId;
+    private String userId;
+    private String subjectId;
     private String numberOfCorrect;
     private Date date;
 }
