@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,21 +37,22 @@ public class HistoryController {
     public ResponseEntity<History> getHistoryById(@PathVariable ObjectId id) {
         Optional<History> history = historyRepo.findById(id);
         return history.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .orElse(ResponseEntity.ok().build());
     }
 
     // Create a new history
     @PostMapping("/create")
     public ResponseEntity<History> createHistory(@RequestBody History history) {
+        history.setDate(new Date());
         History savedHistory = historyRepo.save(history);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedHistory);
+        return ResponseEntity.status(HttpStatus.OK).body(savedHistory);
     }
 
     // Update history by ID
     @PutMapping("/edit/{id}")
     public ResponseEntity<History> updateHistory(@PathVariable ObjectId id, @RequestBody History history) {
         if (!historyRepo.existsById(id)) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.ok().build();
         }
         history.setId(id);
         History updatedHistory = historyRepo.save(history);
@@ -61,9 +63,9 @@ public class HistoryController {
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deleteHistory(@PathVariable ObjectId id) {
         if (!historyRepo.existsById(id)) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.ok().build();
         }
         historyRepo.deleteById(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 }
