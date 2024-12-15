@@ -49,7 +49,7 @@ public class SubjectController {
     @GetMapping("/all")
     public ResponseEntity<ResponseWrapper<List<Subject>>> getAllSubjects() {
         try {
-            List<Subject> subjects = subjectRepo.findAll();
+            List<Subject> subjects = subjectRepo.findByUserIdIsNull();
             return ResponseEntity.ok(new ResponseWrapper<>(subjects, 1));
         } catch (Exception e) {
             e.printStackTrace();
