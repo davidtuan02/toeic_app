@@ -1,7 +1,9 @@
 package com.toeic.toeic_app.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.toeic.toeic_app.model.User;
 import com.toeic.toeic_app.repository.UserRepo;
+import com.toeic.toeic_app.util.AESUtil;
 import com.toeic.toeic_app.util.JwtUtil;
 import com.toeic.toeic_app.wrapper.ResponseWrapper;
 import org.bson.types.ObjectId;
@@ -15,12 +17,20 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import javax.crypto.SecretKey;
 
 @RestController
 @RequestMapping("/user")
 public class UserController {
+    private final SecretKey secretKey;
+    private final UserRepo userRepo;
+
     @Autowired
-    private UserRepo userRepo;
+    public UserController(SecretKey secretKey, UserRepo userRepo) {
+        this.secretKey = secretKey;
+        this.userRepo = userRepo;
+    }
 
     @Autowired
     private JavaMailSender emailSender;
@@ -161,38 +171,132 @@ public class UserController {
 //    }
 
     @PostMapping("/login")
-    public ResponseEntity<ResponseWrapper<User>> login(@RequestBody User loginRequest) {
+    public ResponseEntity<ResponseWrapper<String>> login(@RequestBody User loginRequest) {
         try {
             Optional<User> userOptional = userRepo.findByEmail(loginRequest.getEmail());
             if (userOptional.isPresent()) {
                 User user = userOptional.get();
                 String inputPassword = loginRequest.getPassword();
 
-// Kiểm tra nếu mật khẩu đầu vào đã là mã băm
-                String passwordToCompare;
-                if (isMD5Hash(inputPassword)) {
-                    passwordToCompare = inputPassword; // Mật khẩu đã băm, dùng trực tiếp
-                } else {
-                    passwordToCompare = DigestUtils.md5DigestAsHex(inputPassword.getBytes()); // Băm mật khẩu trước khi so sánh
-                }
-
-// So sánh mật khẩu
+                // Mã hóa mật khẩu đầu vào để so sánh
+                String passwordToCompare = DigestUtils.md5DigestAsHex(inputPassword.getBytes());
                 if (passwordToCompare.equals(user.getPassword())) {
-                    ResponseWrapper<User> response = new ResponseWrapper<>(user, 1);
+                    SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    String rawContent = objectMapper.writeValueAsString(user);
+                    String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
+
+                    ResponseWrapper<String> response = new ResponseWrapper<>(encryptedContent, 1);
                     return ResponseEntity.status(HttpStatus.OK).body(response);
                 } else {
-                    ResponseWrapper<User> response = new ResponseWrapper<>(null, 2);
-                    return ResponseEntity.status(HttpStatus.OK).body(response);
+                    return ResponseEntity.status(HttpStatus.OK)
+                            .body(new ResponseWrapper<>(null, 2)); // Sai mật khẩu
                 }
             } else {
-                ResponseWrapper<User> response = new ResponseWrapper<>(null, 2);
-                return ResponseEntity.status(HttpStatus.OK).body(response);
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(new ResponseWrapper<>(null, 2)); // Không tìm thấy user
             }
         } catch (Exception e) {
-            ResponseWrapper<User> response = new ResponseWrapper<>(null, 3);
-            return ResponseEntity.status(HttpStatus.OK).body(response);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseWrapper<>(null, 3)); // Lỗi server
         }
     }
+
+    @PostMapping("/decrypt")
+    public ResponseEntity<ResponseWrapper<Object>> decryptContent(@RequestBody Map<String, String> requestBody) {
+        try {
+            // Lấy content mã hóa từ RequestBody
+            String encryptedContent = requestBody.get("content");
+
+            // Tạo khóa AES (phải giống với khóa dùng để mã hóa)
+            SecretKey secretKey = AESUtil.generateKeyFromString("YourSecretKey123");
+
+            // Giải mã content
+            String decryptedContent = AESUtil.decrypt(encryptedContent, secretKey);
+
+            // Parse JSON đã giải mã về Object (hoặc bất kỳ model nào bạn muốn)
+            ObjectMapper objectMapper = new ObjectMapper();
+            Object originalContent = objectMapper.readValue(decryptedContent, Object.class);
+
+            // Trả về response với content đã giải mã
+            ResponseWrapper<Object> response = new ResponseWrapper<>(originalContent, 1);
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        } catch (Exception e) {
+            // Xử lý lỗi
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ResponseWrapper<>(null, 3)); // Lỗi giải mã hoặc dữ liệu không hợp lệ
+        }
+    }
+
+
+
+//    @PostMapping("/login")
+//    public ResponseEntity<String> login(@RequestBody User loginRequest) {
+//        try {
+//            Optional<User> userOptional = userRepo.findByEmail(loginRequest.getEmail());
+//            if (userOptional.isPresent()) {
+//                User user = userOptional.get();
+//                String inputPassword = loginRequest.getPassword();
+//
+//                // Kiểm tra nếu mật khẩu đầu vào đã là mã băm
+//                String passwordToCompare;
+//                if (isMD5Hash(inputPassword)) {
+//                    passwordToCompare = inputPassword; // Mật khẩu đã băm, dùng trực tiếp
+//                } else {
+//                    passwordToCompare = DigestUtils.md5DigestAsHex(inputPassword.getBytes()); // Băm mật khẩu trước khi so sánh
+//                }
+//
+//                // So sánh mật khẩu
+//                ResponseWrapper<User> response;
+//                if (passwordToCompare.equals(user.getPassword())) {
+//                    response = new ResponseWrapper<>(user, 1);
+//                } else {
+//                    response = new ResponseWrapper<>(null, 2);
+//                }
+//
+//                // Chuyển phản hồi thành JSON
+//                ObjectMapper objectMapper = new ObjectMapper();
+//                String jsonResponse = objectMapper.writeValueAsString(response);
+//
+//                // Mã hóa JSON bằng AES
+//                String encryptedResponse = AESUtil.encrypt(jsonResponse, secretKey);
+//
+//                // Trả về chuỗi mã hóa
+//                return ResponseEntity.status(HttpStatus.OK).body(encryptedResponse);
+//            } else {
+//                ResponseWrapper<User> response = new ResponseWrapper<>(null, 2);
+//
+//                // Chuyển phản hồi thành JSON
+//                ObjectMapper objectMapper = new ObjectMapper();
+//                String jsonResponse = objectMapper.writeValueAsString(response);
+//
+//                // Mã hóa JSON bằng AES
+//                String encryptedResponse = AESUtil.encrypt(jsonResponse, secretKey);
+//
+//                // Trả về chuỗi mã hóa
+//                return ResponseEntity.status(HttpStatus.OK).body(encryptedResponse);
+//            }
+//        } catch (Exception e) {
+//            try {
+//                ResponseWrapper<User> response = new ResponseWrapper<>(null, 3);
+//
+//                // Chuyển phản hồi thành JSON
+//                ObjectMapper objectMapper = new ObjectMapper();
+//                String jsonResponse = objectMapper.writeValueAsString(response);
+//
+//                // Mã hóa JSON bằng AES
+//                String encryptedResponse = AESUtil.encrypt(jsonResponse, secretKey);
+//
+//                // Trả về chuỗi mã hóa
+//                return ResponseEntity.status(HttpStatus.OK).body(encryptedResponse);
+//            } catch (Exception ex) {
+//                // Trả về lỗi nếu mã hóa thất bại
+//                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error occurred while encrypting the response");
+//            }
+//        }
+//    }
+
 
     @PostMapping("/register")
     public ResponseEntity<Map<String, Object>> saveUser(@RequestBody User user) {

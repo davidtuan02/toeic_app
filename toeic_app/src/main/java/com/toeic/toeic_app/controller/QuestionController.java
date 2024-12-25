@@ -43,7 +43,7 @@ public class QuestionController {
                                           @RequestParam("stt") String stt) {
         try {
             // Địa chỉ gốc của máy chủ
-            String serverBaseUrl = "http://18.216.169.143:8081";
+            String serverBaseUrl = "http://3.139.56.242:8081";
 
             // Tạo đối tượng Question
             Question question = new Question();
