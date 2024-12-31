@@ -210,7 +210,7 @@ public class UserController {
             String encryptedContent = requestBody.get("content");
 
             // Tạo khóa AES (phải giống với khóa dùng để mã hóa)
-            SecretKey secretKey = AESUtil.generateKeyFromString("YourSecretKey123");
+            SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
 
             // Giải mã content
             String decryptedContent = AESUtil.decrypt(encryptedContent, secretKey);
