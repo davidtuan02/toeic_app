@@ -484,7 +484,7 @@ public class UserController {
             if (user.isPresent()) {
                 SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
                 ObjectMapper objectMapper = new ObjectMapper();
-                String rawContent = objectMapper.writeValueAsString(user);
+                String rawContent = objectMapper.writeValueAsString(user.get());
                 String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
                 return ResponseEntity.status(HttpStatus.OK)
                         .body(new ResponseWrapper<>(encryptedContent, 1));
