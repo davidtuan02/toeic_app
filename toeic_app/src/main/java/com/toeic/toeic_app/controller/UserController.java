@@ -103,28 +103,28 @@ public class UserController {
         emailSender.send(message);
     }
 
-    @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestParam String email, @RequestParam String newPassword) {
-        Optional<User> optionalUser = userRepo.findByEmail(email);
-        if (optionalUser.isEmpty()) {
-            ResponseWrapper<?> response = new ResponseWrapper<>(null, 2);
-            return ResponseEntity.status(HttpStatus.OK).body(response);
-        }
-
-        User user = optionalUser.get();
-        if (new Date().after(user.getResetCodeExpiry())) {
-            ResponseWrapper<?> response = new ResponseWrapper<>(null, 2);
-            return ResponseEntity.status(HttpStatus.OK).body(response);
-        }
-
-        user.setPassword(DigestUtils.md5DigestAsHex(newPassword.getBytes()));
-        user.setResetCode(null);
-        user.setResetCodeExpiry(null);
-        userRepo.save(user);
-
-        ResponseWrapper<?> response = new ResponseWrapper<>(null, 1);
-        return ResponseEntity.status(HttpStatus.OK).body(response);
-    }
+//    @PostMapping("/reset-password")
+//    public ResponseEntity<?> resetPassword(@RequestParam String email, @RequestParam String newPassword) {
+//        Optional<User> optionalUser = userRepo.findByEmail(email);
+//        if (optionalUser.isEmpty()) {
+//            ResponseWrapper<?> response = new ResponseWrapper<>(null, 2);
+//            return ResponseEntity.status(HttpStatus.OK).body(response);
+//        }
+//
+//        User user = optionalUser.get();
+//        if (new Date().after(user.getResetCodeExpiry())) {
+//            ResponseWrapper<?> response = new ResponseWrapper<>(null, 2);
+//            return ResponseEntity.status(HttpStatus.OK).body(response);
+//        }
+//
+//        user.setPassword(DigestUtils.md5DigestAsHex(newPassword.getBytes()));
+//        user.setResetCode(null);
+//        user.setResetCodeExpiry(null);
+//        userRepo.save(user);
+//
+//        ResponseWrapper<?> response = new ResponseWrapper<>(null, 1);
+//        return ResponseEntity.status(HttpStatus.OK).body(response);
+//    }
 
 
 //    @PostMapping("/login")
@@ -169,6 +169,33 @@ public class UserController {
 //            return ResponseEntity.status(HttpStatus.OK).body(response);
 //        }
 //    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ResponseWrapper<String>> resetPassword(@RequestParam String email, @RequestParam String newPassword) throws Exception {
+        Optional<User> optionalUser = userRepo.findByEmail(email);
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseWrapper<>(null, 2));
+        }
+
+        User user = optionalUser.get();
+        if (new Date().after(user.getResetCodeExpiry())) {
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseWrapper<>(null, 2));
+        }
+
+        user.setPassword(DigestUtils.md5DigestAsHex(newPassword.getBytes()));
+        user.setResetCode(null);
+        user.setResetCodeExpiry(null);
+        userRepo.save(user);
+
+        SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+        ObjectMapper objectMapper = new ObjectMapper();
+        String rawContent = objectMapper.writeValueAsString(user);
+        String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(new ResponseWrapper<>(encryptedContent, 1));
+    }
 
     @PostMapping("/login")
     public ResponseEntity<ResponseWrapper<String>> login(@RequestBody User loginRequest) {
@@ -229,7 +256,66 @@ public class UserController {
         }
     }
 
+    @PostMapping("/register")
+    public ResponseEntity<ResponseWrapper<String>> saveUser(@RequestBody User user) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            // Check if the user already exists by email
+            Optional<User> existingUser = userRepo.findByEmail(user.getEmail());
+            if (existingUser.isPresent()) {
+                response.put("status", 2);
+                response.put("message", "User with this email already exists");
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(new ResponseWrapper<>(null, 2));
+            }
 
+            // Validate required fields
+            if (user.getName() == null || user.getName().isEmpty()) {
+                response.put("status", 2);
+                response.put("message", "Name is required");
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(new ResponseWrapper<>(null, 2));
+            }
+            if (user.getEmail() == null || user.getEmail().isEmpty()) {
+                response.put("status", 2);
+                response.put("message", "Email is required");
+
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(new ResponseWrapper<>(null, 2));
+            }
+            if (user.getPassword() == null || user.getPassword().isEmpty()) {
+                response.put("status", 2);
+                response.put("message", "Password is required");
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(new ResponseWrapper<>(null, 2));
+            }
+
+            // Set dates and encrypt password
+            Date currentDate = new Date();
+            user.setCreatedDate(currentDate);
+            user.setUpdatedDate(currentDate);
+            String password = user.getPassword();
+            if (!isMD5Hash(password)) {
+                password = DigestUtils.md5DigestAsHex(password.getBytes());
+            }
+            user.setPassword(password);
+            user.setRole("user");
+
+            User savedUser = userRepo.save(user);
+
+            SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+            ObjectMapper objectMapper = new ObjectMapper();
+            String rawContent = objectMapper.writeValueAsString(savedUser);
+            String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
+            ResponseWrapper<String> responsee = new ResponseWrapper<>(encryptedContent, 1);
+            return ResponseEntity.status(HttpStatus.OK).body(responsee);
+        } catch (Exception e) {
+            response.put("status", 3);
+            response.put("message", "An error occurred during registration: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseWrapper<>(null, 3));
+        }
+    }
 
 //    @PostMapping("/login")
 //    public ResponseEntity<String> login(@RequestBody User loginRequest) {
@@ -298,59 +384,59 @@ public class UserController {
 //    }
 
 
-    @PostMapping("/register")
-    public ResponseEntity<Map<String, Object>> saveUser(@RequestBody User user) {
-        Map<String, Object> response = new HashMap<>();
-        try {
-            // Check if the user already exists by email
-            Optional<User> existingUser = userRepo.findByEmail(user.getEmail());
-            if (existingUser.isPresent()) {
-                response.put("status", 2);
-                response.put("message", "User with this email already exists");
-                return ResponseEntity.status(HttpStatus.OK).body(response);
-            }
-
-            // Validate required fields
-            if (user.getName() == null || user.getName().isEmpty()) {
-                response.put("status", 2);
-                response.put("message", "Name is required");
-                return ResponseEntity.status(HttpStatus.OK).body(response);
-            }
-            if (user.getEmail() == null || user.getEmail().isEmpty()) {
-                response.put("status", 2);
-                response.put("message", "Email is required");
-                
-                return ResponseEntity.status(HttpStatus.OK).body(response);
-            }
-            if (user.getPassword() == null || user.getPassword().isEmpty()) {
-                response.put("status", 2);
-                response.put("message", "Password is required");
-                return ResponseEntity.status(HttpStatus.OK).body(response);
-            }
-
-            // Set dates and encrypt password
-            Date currentDate = new Date();
-            user.setCreatedDate(currentDate);
-            user.setUpdatedDate(currentDate);
-            String password = user.getPassword();
-            if (!isMD5Hash(password)) {
-                password = DigestUtils.md5DigestAsHex(password.getBytes());
-            }
-            user.setPassword(password);
-            user.setRole("user");
-
-            // Save the new user
-            User savedUser = userRepo.save(user);
-            response.put("status", 1);
-            response.put("message", "User registered successfully");
-            response.put("user", savedUser);
-            return ResponseEntity.status(HttpStatus.OK).body(response);
-        } catch (Exception e) {
-            response.put("status", 3);
-            response.put("message", "An error occurred during registration: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.OK).body(response);
-        }
-    }
+//    @PostMapping("/register")
+//    public ResponseEntity<Map<String, Object>> saveUser(@RequestBody User user) {
+//        Map<String, Object> response = new HashMap<>();
+//        try {
+//            // Check if the user already exists by email
+//            Optional<User> existingUser = userRepo.findByEmail(user.getEmail());
+//            if (existingUser.isPresent()) {
+//                response.put("status", 2);
+//                response.put("message", "User with this email already exists");
+//                return ResponseEntity.status(HttpStatus.OK).body(response);
+//            }
+//
+//            // Validate required fields
+//            if (user.getName() == null || user.getName().isEmpty()) {
+//                response.put("status", 2);
+//                response.put("message", "Name is required");
+//                return ResponseEntity.status(HttpStatus.OK).body(response);
+//            }
+//            if (user.getEmail() == null || user.getEmail().isEmpty()) {
+//                response.put("status", 2);
+//                response.put("message", "Email is required");
+//
+//                return ResponseEntity.status(HttpStatus.OK).body(response);
+//            }
+//            if (user.getPassword() == null || user.getPassword().isEmpty()) {
+//                response.put("status", 2);
+//                response.put("message", "Password is required");
+//                return ResponseEntity.status(HttpStatus.OK).body(response);
+//            }
+//
+//            // Set dates and encrypt password
+//            Date currentDate = new Date();
+//            user.setCreatedDate(currentDate);
+//            user.setUpdatedDate(currentDate);
+//            String password = user.getPassword();
+//            if (!isMD5Hash(password)) {
+//                password = DigestUtils.md5DigestAsHex(password.getBytes());
+//            }
+//            user.setPassword(password);
+//            user.setRole("user");
+//
+//            // Save the new user
+//            User savedUser = userRepo.save(user);
+//            response.put("status", 1);
+//            response.put("message", "User registered successfully");
+//            response.put("user", savedUser);
+//            return ResponseEntity.status(HttpStatus.OK).body(response);
+//        } catch (Exception e) {
+//            response.put("status", 3);
+//            response.put("message", "An error occurred during registration: " + e.getMessage());
+//            return ResponseEntity.status(HttpStatus.OK).body(response);
+//        }
+//    }
 
     private boolean isMD5Hash(String str) {
         return str != null && str.matches("^[a-fA-F0-9]{32}$");
@@ -375,14 +461,36 @@ public class UserController {
     }
 
 
+//    @GetMapping("/{id}")
+//    public ResponseEntity<?> getUserById(@PathVariable("id") String id) {
+//        try {
+//            Optional<User> user = userRepo.findById(new ObjectId(id));
+//            if (user.isPresent()) {
+//                return ResponseEntity.status(HttpStatus.OK).body(user.get());
+//            } else {
+//                return ResponseEntity.status(HttpStatus.OK).body("User not found.");
+//            }
+//        } catch (IllegalArgumentException e) {
+//            return ResponseEntity.status(HttpStatus.OK).body("Invalid user ID format.");
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.OK).body("An error occurred while fetching the user.");
+//        }
+//    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getUserById(@PathVariable("id") String id) {
         try {
             Optional<User> user = userRepo.findById(new ObjectId(id));
             if (user.isPresent()) {
-                return ResponseEntity.status(HttpStatus.OK).body(user.get());
+                SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+                ObjectMapper objectMapper = new ObjectMapper();
+                String rawContent = objectMapper.writeValueAsString(user);
+                String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(new ResponseWrapper<>(encryptedContent, 1));
             } else {
-                return ResponseEntity.status(HttpStatus.OK).body("User not found.");
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(new ResponseWrapper<>(null, 2));
             }
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.OK).body("Invalid user ID format.");
@@ -391,6 +499,57 @@ public class UserController {
         }
     }
 
+
+//    @PutMapping("/update/{id}")
+//    public ResponseEntity<?> updateUser(@PathVariable("id") String id, @RequestBody User userDetails) {
+//        Map<String, Object> response = new HashMap<>();
+//
+//        try {
+//            Optional<User> userOptional = userRepo.findById(new ObjectId(id));
+//            if (userOptional.isPresent()) {
+//                User user = userOptional.get();
+//
+//                if (userDetails.getEmail() != null) {
+//                    user.setEmail(userDetails.getEmail());
+//                }
+//                if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
+//                    if (userDetails.getPassword().length() == 32) {
+//                        user.setPassword(userDetails.getPassword());
+//                    } else {
+//                        user.setPassword(DigestUtils.md5DigestAsHex(userDetails.getPassword().getBytes()));
+//                    }
+//                }
+//                if (userDetails.getName() != null) {
+//                    user.setName(userDetails.getName());
+//                }
+//                if (userDetails.getPhone() != null) {
+//                    user.setPhone(userDetails.getPhone());
+//                }
+//
+//                user.setUpdatedDate(new Date());
+//                User updatedUser = userRepo.save(user);
+//
+//                // Prepare the success response
+//                response.put("status", HttpStatus.OK.value());
+//                response.put("message", "User updated successfully");
+//                response.put("updatedUser", updatedUser);
+//
+//                return ResponseEntity.status(HttpStatus.OK).body(response);
+//            } else {
+//                response.put("status", HttpStatus.OK.value());
+//                response.put("message", "User not found.");
+//                return ResponseEntity.status(HttpStatus.OK).body(response);
+//            }
+//        } catch (IllegalArgumentException e) {
+//            response.put("status", HttpStatus.OK.value());
+//            response.put("message", "Invalid user ID format or invalid data.");
+//            return ResponseEntity.status(HttpStatus.OK).body(response);
+//        } catch (Exception e) {
+//            response.put("status", HttpStatus.OK.value());
+//            response.put("message", "An error occurred while updating the user.");
+//            return ResponseEntity.status(HttpStatus.OK).body(response);
+//        }
+//    }
 
     @PutMapping("/update/{id}")
     public ResponseEntity<?> updateUser(@PathVariable("id") String id, @RequestBody User userDetails) {
@@ -426,20 +585,22 @@ public class UserController {
                 response.put("message", "User updated successfully");
                 response.put("updatedUser", updatedUser);
 
-                return ResponseEntity.status(HttpStatus.OK).body(response);
+                SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+                ObjectMapper objectMapper = new ObjectMapper();
+                String rawContent = objectMapper.writeValueAsString(updatedUser);
+                String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(new ResponseWrapper<>(encryptedContent, 1));
             } else {
-                response.put("status", HttpStatus.OK.value());
-                response.put("message", "User not found.");
-                return ResponseEntity.status(HttpStatus.OK).body(response);
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(new ResponseWrapper<>(null, 2));
             }
         } catch (IllegalArgumentException e) {
-            response.put("status", HttpStatus.OK.value());
-            response.put("message", "Invalid user ID format or invalid data.");
-            return ResponseEntity.status(HttpStatus.OK).body(response);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseWrapper<>(null, 2));
         } catch (Exception e) {
-            response.put("status", HttpStatus.OK.value());
-            response.put("message", "An error occurred while updating the user.");
-            return ResponseEntity.status(HttpStatus.OK).body(response);
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseWrapper<>(null, 2));
         }
     }
 
