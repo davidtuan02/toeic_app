@@ -126,6 +126,84 @@ public class QuestionController {
 //    }
 
 
+//    @PostMapping("/save")
+//    public ResponseEntity<?> saveQuestion(@RequestParam(value = "file", required = false) MultipartFile file,
+//                                          @RequestParam(value = "questionImg", required = false) MultipartFile questionImg,
+//                                          @RequestParam("test") String test,
+//                                          @RequestParam("part") String part,
+//                                          @RequestParam("questionText") String questionText,
+//                                          @RequestParam("options") String optionsJson,
+//                                          @RequestParam("stt") String stt) {
+//        try {
+//            // Địa chỉ gốc của máy chủ
+//            String serverBaseUrl = "http://3.139.56.242:8081";
+//
+//            // Tạo đối tượng Question
+//            Question question = new Question();
+//            question.setTest(test);
+//            question.setPart(part);
+//            question.setQuestionText(questionText);
+//            question.setStt(stt);
+//
+//            // Xử lý file âm thanh (nếu có)
+//            if (file != null && !file.isEmpty()) {
+//                String originalFileName = file.getOriginalFilename();
+//                if (originalFileName != null) {
+//                    String sanitizedFileName = originalFileName.replaceAll("[^a-zA-Z0-9\\.\\-_]", "_");
+//                    String audioFileName = new ObjectId().toString() + "_" + sanitizedFileName;
+//                    Path audioFilePath = Paths.get(AUDIO_DIRECTORY + File.separator + audioFileName);
+//                    Files.write(audioFilePath, file.getBytes());
+//                    // Tạo URL đầy đủ cho file âm thanh
+//                    String audioFileUrl = serverBaseUrl + "/audio/" + audioFileName;
+//                    question.setQuestionAudio(audioFileUrl); // Lưu URL đầy đủ của audio
+//                }
+//            } else {
+//                question.setQuestionAudio(null); // Nếu không có file âm thanh, đặt giá trị null
+//            }
+//
+//            // Xử lý ảnh câu hỏi (nếu có)
+//            if (questionImg != null && !questionImg.isEmpty()) {
+//                String originalImgName = questionImg.getOriginalFilename();
+//                if (originalImgName != null) {
+//                    String sanitizedImgName = originalImgName.replaceAll("[^a-zA-Z0-9\\.\\-_]", "_");
+//                    String imgFileName = new ObjectId().toString() + "_" + sanitizedImgName;
+//                    Path imgFilePath = Paths.get(IMG_DIRECTORY + File.separator + imgFileName);
+//                    Files.write(imgFilePath, questionImg.getBytes());
+//                    // Tạo URL đầy đủ cho ảnh câu hỏi
+//                    String imgFileUrl = serverBaseUrl + "/img/" + imgFileName;
+//                    question.setQuestionImg(imgFileUrl); // Lưu URL đầy đủ của hình ảnh
+//                }
+//            } else {
+//                question.setQuestionImg(null); // Nếu không có ảnh, đặt giá trị null
+//            }
+//
+//            // Chuyển đổi chuỗi JSON thành danh sách options
+//            ObjectMapper mapper = new ObjectMapper();
+//            List<com.toeic.toeic_app.model.Question.Option> options =
+//                    Arrays.asList(mapper.readValue(optionsJson, com.toeic.toeic_app.model.Question.Option[].class));
+//            question.setOptions(options);
+//
+//            Date currentDate = new Date();
+//            question.setCreatedDate(currentDate);
+//            question.setUpdatedDate(currentDate);
+//
+//            // Lưu câu hỏi vào database
+//            Question savedQuestion = questionRepo.save(question);
+//
+//            // Trả về câu hỏi đã lưu dưới dạng JSON
+//            return ResponseEntity.status(HttpStatus.OK).body(Map.of("status", 1, "data", savedQuestion));
+//
+//        } catch (IOException e) {
+//            // Trả về lỗi nội bộ với thông điệp JSON
+//            return ResponseEntity.status(HttpStatus.OK)
+//                    .body(Map.of("status", 3, "message", "Internal server error: " + e.getMessage()));
+//        } catch (IllegalArgumentException e) {
+//            // Trả về lỗi yêu cầu không hợp lệ với thông điệp JSON
+//            return ResponseEntity.status(HttpStatus.OK)
+//                    .body(Map.of("status", 2, "message", "Bad request: " + e.getMessage()));
+//        }
+//    }
+
     @PostMapping("/save")
     public ResponseEntity<?> saveQuestion(@RequestParam(value = "file", required = false) MultipartFile file,
                                           @RequestParam(value = "questionImg", required = false) MultipartFile questionImg,
@@ -145,17 +223,25 @@ public class QuestionController {
             question.setQuestionText(questionText);
             question.setStt(stt);
 
+            // Log thông tin câu hỏi
+            System.out.println("Processing question: " + questionText);
+
             // Xử lý file âm thanh (nếu có)
             if (file != null && !file.isEmpty()) {
                 String originalFileName = file.getOriginalFilename();
                 if (originalFileName != null) {
+                    System.out.println("Processing audio file: " + originalFileName);
                     String sanitizedFileName = originalFileName.replaceAll("[^a-zA-Z0-9\\.\\-_]", "_");
                     String audioFileName = new ObjectId().toString() + "_" + sanitizedFileName;
                     Path audioFilePath = Paths.get(AUDIO_DIRECTORY + File.separator + audioFileName);
+
+                    System.out.println("Audio file path: " + audioFilePath.toString());
+
                     Files.write(audioFilePath, file.getBytes());
                     // Tạo URL đầy đủ cho file âm thanh
                     String audioFileUrl = serverBaseUrl + "/audio/" + audioFileName;
                     question.setQuestionAudio(audioFileUrl); // Lưu URL đầy đủ của audio
+                    System.out.println("Audio file saved with URL: " + audioFileUrl);
                 }
             } else {
                 question.setQuestionAudio(null); // Nếu không có file âm thanh, đặt giá trị null
@@ -165,13 +251,18 @@ public class QuestionController {
             if (questionImg != null && !questionImg.isEmpty()) {
                 String originalImgName = questionImg.getOriginalFilename();
                 if (originalImgName != null) {
+                    System.out.println("Processing image file: " + originalImgName);
                     String sanitizedImgName = originalImgName.replaceAll("[^a-zA-Z0-9\\.\\-_]", "_");
                     String imgFileName = new ObjectId().toString() + "_" + sanitizedImgName;
                     Path imgFilePath = Paths.get(IMG_DIRECTORY + File.separator + imgFileName);
+
+                    System.out.println("Image file path: " + imgFilePath.toString());
+
                     Files.write(imgFilePath, questionImg.getBytes());
                     // Tạo URL đầy đủ cho ảnh câu hỏi
                     String imgFileUrl = serverBaseUrl + "/img/" + imgFileName;
                     question.setQuestionImg(imgFileUrl); // Lưu URL đầy đủ của hình ảnh
+                    System.out.println("Image file saved with URL: " + imgFileUrl);
                 }
             } else {
                 question.setQuestionImg(null); // Nếu không có ảnh, đặt giá trị null
@@ -183,6 +274,9 @@ public class QuestionController {
                     Arrays.asList(mapper.readValue(optionsJson, com.toeic.toeic_app.model.Question.Option[].class));
             question.setOptions(options);
 
+            // Log thông tin options
+            System.out.println("Options: " + options);
+
             Date currentDate = new Date();
             question.setCreatedDate(currentDate);
             question.setUpdatedDate(currentDate);
@@ -190,20 +284,24 @@ public class QuestionController {
             // Lưu câu hỏi vào database
             Question savedQuestion = questionRepo.save(question);
 
+            // Log thông tin câu hỏi đã lưu
+            System.out.println("Question saved: " + savedQuestion);
+
             // Trả về câu hỏi đã lưu dưới dạng JSON
             return ResponseEntity.status(HttpStatus.OK).body(Map.of("status", 1, "data", savedQuestion));
 
         } catch (IOException e) {
             // Trả về lỗi nội bộ với thông điệp JSON
+            System.out.println("IOException: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.OK)
                     .body(Map.of("status", 3, "message", "Internal server error: " + e.getMessage()));
         } catch (IllegalArgumentException e) {
             // Trả về lỗi yêu cầu không hợp lệ với thông điệp JSON
+            System.out.println("IllegalArgumentException: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.OK)
                     .body(Map.of("status", 2, "message", "Bad request: " + e.getMessage()));
         }
     }
-
 
 
 
