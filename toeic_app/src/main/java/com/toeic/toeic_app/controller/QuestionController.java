@@ -237,7 +237,11 @@ public class QuestionController {
 
                     System.out.println("Audio file path: " + audioFilePath.toString());
 
-                    Files.write(audioFilePath, file.getBytes());
+                    if (!Files.exists(audioFilePath.getParent())) {
+                        Files.createDirectories(audioFilePath.getParent());
+                    }
+                    Files.write(audioFilePath, questionImg.getBytes());
+
                     // Tạo URL đầy đủ cho file âm thanh
                     String audioFileUrl = serverBaseUrl + "/audio/" + audioFileName;
                     question.setQuestionAudio(audioFileUrl); // Lưu URL đầy đủ của audio
