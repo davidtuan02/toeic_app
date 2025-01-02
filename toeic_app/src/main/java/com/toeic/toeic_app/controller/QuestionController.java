@@ -262,6 +262,9 @@ public class QuestionController {
 
                     System.out.println("Image file path: " + imgFilePath.toString());
 
+                    if (!Files.exists(imgFilePath.getParent())) {
+                        Files.createDirectories(imgFilePath.getParent());
+                    }
                     Files.write(imgFilePath, questionImg.getBytes());
                     // Tạo URL đầy đủ cho ảnh câu hỏi
                     String imgFileUrl = serverBaseUrl + "/img/" + imgFileName;
