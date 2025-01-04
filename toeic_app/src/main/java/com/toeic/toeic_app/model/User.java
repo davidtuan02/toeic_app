@@ -28,4 +28,5 @@ public class User {
     private String role;
     private String resetCode;
     private Date resetCodeExpiry;
+    public boolean isTwoAuth = false;
 }

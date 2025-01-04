@@ -707,6 +707,10 @@ public class UserController {
                     user.setPhone(userDetails.getPhone());
                 }
 
+                if (userDetails.isTwoAuth) {
+                    user.setTwoAuth(userDetails.isTwoAuth);
+                }
+
                 user.setUpdatedDate(new Date());
                 User updatedUser = userRepo.save(user);
 
@@ -723,29 +727,29 @@ public class UserController {
 //                        .body(new ResponseWrapper<>(encryptedContent, 1));
 
                 // Tạo khóa từ chuỗi
-                SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
-
-// Tạo một IV ngẫu nhiên
-                IvParameterSpec iv = AESUtil.generateIV();
-
-// Chuyển đối tượng updatedUser thành JSON
-                ObjectMapper objectMapper = new ObjectMapper();
-                String rawContent = objectMapper.writeValueAsString(updatedUser);
-
-// Mã hóa nội dung JSON với khóa và IV
-                String encryptedContent = AESUtil.encrypt(rawContent, secretKey, iv);
-
-// Chuyển IV thành Base64 để dễ dàng truyền đi
-                String ivBase64 = Base64.getEncoder().encodeToString(iv.getIV());
-
-// Kết hợp IV và dữ liệu mã hóa thành một chuỗi định dạng `IV:CipherText`
-                String combinedContent = ivBase64 + ":" + encryptedContent;
-
-// Gói dữ liệu mã hóa vào ResponseWrapper
-                ResponseWrapper<String> responsee = new ResponseWrapper<>(combinedContent, 1);
+//                SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+//
+//// Tạo một IV ngẫu nhiên
+//                IvParameterSpec iv = AESUtil.generateIV();
+//
+//// Chuyển đối tượng updatedUser thành JSON
+//                ObjectMapper objectMapper = new ObjectMapper();
+//                String rawContent = objectMapper.writeValueAsString(updatedUser);
+//
+//// Mã hóa nội dung JSON với khóa và IV
+//                String encryptedContent = AESUtil.encrypt(rawContent, secretKey, iv);
+//
+//// Chuyển IV thành Base64 để dễ dàng truyền đi
+//                String ivBase64 = Base64.getEncoder().encodeToString(iv.getIV());
+//
+//// Kết hợp IV và dữ liệu mã hóa thành một chuỗi định dạng `IV:CipherText`
+//                String combinedContent = ivBase64 + ":" + encryptedContent;
+//
+//// Gói dữ liệu mã hóa vào ResponseWrapper
+//                ResponseWrapper<String> responsee = new ResponseWrapper<>(combinedContent, 1);
 
 // Trả về ResponseEntity
-                return ResponseEntity.status(HttpStatus.OK).body(responsee);
+                return ResponseEntity.status(HttpStatus.OK).body(response);
 
             } else {
                 return ResponseEntity.status(HttpStatus.OK)
@@ -784,6 +788,39 @@ public class UserController {
         }
     }
 
+
+    @PostMapping("/update-auth-status/{id}")
+    public ResponseEntity<?> updateAuthStatus(@RequestBody Boolean isTwoAuth, @PathVariable("id") String id) {
+        try {
+            // Convert the String id to ObjectId for MongoDB
+            ObjectId objectId = new ObjectId(id);
+
+            // Find the user by id
+            Optional<User> userOptional = userRepo.findById(objectId);
+
+            if (userOptional.isPresent()) {
+                // Get the user object
+                User user = userOptional.get();
+
+                // Update the isTwoAuth field
+                user.setTwoAuth(isTwoAuth);
+
+                // Save the updated user back to the repository
+                userRepo.save(user);
+
+                // Return success response
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(new ResponseWrapper<>(null, 1));  // Success status code
+            } else {
+                // User not found
+                return ResponseEntity.status(HttpStatus.OK).body(new ResponseWrapper<>(null, 2));  // User not found status code
+            }
+        } catch (Exception e) {
+            // Handle exceptions
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseWrapper<>(null, 3));  // Error status code
+        }
+    }
 
 
 
