@@ -415,7 +415,7 @@ public class UserController {
 
             String combinedContent = ivBase64 + ":" + encryptedContent;
 
-            ResponseWrapper<String> responsee = new ResponseWrapper<>(encryptedContent, 1);
+            ResponseWrapper<String> responsee = new ResponseWrapper<>(combinedContent, 1);
 
             return ResponseEntity.status(HttpStatus.OK).body(responsee);
 
