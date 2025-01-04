@@ -226,20 +226,14 @@ public class UserController {
             if (userOptional.isPresent()) {
                 User user = userOptional.get();
                 String inputPassword = loginRequest.getPassword();
-
-                // Mã hóa mật khẩu đầu vào để so sánh
-                String passwordToCompare = DigestUtils.md5DigestAsHex(inputPassword.getBytes());
+                String passwordToCompare;
+                if (isMD5Hash(inputPassword)) {
+                    passwordToCompare = inputPassword; // Mật khẩu đã được hash
+                } else {
+                    // Mật khẩu chưa được hash, thực hiện hash và so sánh
+                    passwordToCompare = DigestUtils.md5DigestAsHex(inputPassword.getBytes());
+                }
                 if (passwordToCompare.equals(user.getPassword())) {
-//                    SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
-//
-//                    ObjectMapper objectMapper = new ObjectMapper();
-//                    String rawContent = objectMapper.writeValueAsString(user);
-//                    String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
-//
-//                    ResponseWrapper<String> response = new ResponseWrapper<>(encryptedContent, 1);
-//                    return ResponseEntity.status(HttpStatus.OK).body(response);
-
-                    // Tạo khóa từ chuỗi
                     SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
 
 // Tạo một IV ngẫu nhiên
