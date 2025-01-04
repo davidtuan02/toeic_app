@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -414,13 +415,42 @@ public class QuestionController {
                             .body(new ResponseWrapper<>(null, 2));
                 }
 
+//                List<List<Question>> limitedGroups = resultGroups.subList(0, limit / 3);
+//                SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+//                ObjectMapper objectMapper = new ObjectMapper();
+//                String rawContent = objectMapper.writeValueAsString(limitedGroups);
+//                String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
+//                return ResponseEntity.status(HttpStatus.OK)
+//                        .body(new ResponseWrapper<>(encryptedContent, 1));
+
+                // Lấy nhóm câu hỏi với giới hạn
                 List<List<Question>> limitedGroups = resultGroups.subList(0, limit / 3);
+
+// Tạo khóa từ chuỗi
                 SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+
+// Tạo IV ngẫu nhiên
+                IvParameterSpec iv = AESUtil.generateIV();
+
+// Chuyển đổi đối tượng 'limitedGroups' thành chuỗi JSON
                 ObjectMapper objectMapper = new ObjectMapper();
                 String rawContent = objectMapper.writeValueAsString(limitedGroups);
-                String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
-                return ResponseEntity.status(HttpStatus.OK)
-                        .body(new ResponseWrapper<>(encryptedContent, 1));
+
+// Mã hóa dữ liệu với khóa và IV
+                String encryptedContent = AESUtil.encrypt(rawContent, secretKey, iv);
+
+// Chuyển IV thành Base64 để truyền qua mạng
+                String ivBase64 = Base64.getEncoder().encodeToString(iv.getIV());
+
+// Kết hợp IV và dữ liệu mã hóa thành chuỗi
+                String combinedContent = ivBase64 + ":" + encryptedContent;
+
+// Gói dữ liệu mã hóa vào ResponseWrapper
+                ResponseWrapper<String> response = new ResponseWrapper<>(combinedContent, 1);
+
+// Trả về ResponseEntity
+                return ResponseEntity.status(HttpStatus.OK).body(response);
+
 
             } else {
                 Collections.shuffle(allQuestions);
@@ -428,12 +458,39 @@ public class QuestionController {
                         .limit(limit)
                         .collect(Collectors.toList());
 
+//                SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+//                ObjectMapper objectMapper = new ObjectMapper();
+//                String rawContent = objectMapper.writeValueAsString(limitedQuestions);
+//                String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
+//                return ResponseEntity.status(HttpStatus.OK)
+//                        .body(new ResponseWrapper<>(encryptedContent, 1));
+
+
+// Tạo khóa từ chuỗi
                 SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+
+// Tạo IV ngẫu nhiên
+                IvParameterSpec iv = AESUtil.generateIV();
+
+// Chuyển đổi đối tượng 'limitedQuestions' thành chuỗi JSON
                 ObjectMapper objectMapper = new ObjectMapper();
                 String rawContent = objectMapper.writeValueAsString(limitedQuestions);
-                String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
-                return ResponseEntity.status(HttpStatus.OK)
-                        .body(new ResponseWrapper<>(encryptedContent, 1));
+
+// Mã hóa dữ liệu với khóa và IV
+                String encryptedContent = AESUtil.encrypt(rawContent, secretKey, iv);
+
+// Chuyển IV thành Base64 để truyền qua mạng
+                String ivBase64 = Base64.getEncoder().encodeToString(iv.getIV());
+
+// Kết hợp IV và dữ liệu mã hóa thành chuỗi
+                String combinedContent = ivBase64 + ":" + encryptedContent;
+
+// Gói dữ liệu mã hóa vào ResponseWrapper
+                ResponseWrapper<String> response = new ResponseWrapper<>(combinedContent, 1);
+
+// Trả về ResponseEntity
+                return ResponseEntity.status(HttpStatus.OK).body(response);
+
             }
 
         } catch (Exception e) {
@@ -766,12 +823,38 @@ public class QuestionController {
             }
             Optional<Question> question = questionRepo.findById(new ObjectId(id));
             if (question.isPresent()) {
+//                SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+//                ObjectMapper objectMapper = new ObjectMapper();
+//                String rawContent = objectMapper.writeValueAsString(question);
+//                String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
+//                return ResponseEntity.status(HttpStatus.OK)
+//                        .body(new ResponseWrapper<>(encryptedContent, 1));
+
+                // Tạo khóa từ chuỗi
                 SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+
+// Tạo IV ngẫu nhiên
+                IvParameterSpec iv = AESUtil.generateIV();
+
+// Chuyển đổi đối tượng 'question' thành chuỗi JSON
                 ObjectMapper objectMapper = new ObjectMapper();
                 String rawContent = objectMapper.writeValueAsString(question);
-                String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
-                return ResponseEntity.status(HttpStatus.OK)
-                        .body(new ResponseWrapper<>(encryptedContent, 1));
+
+// Mã hóa dữ liệu với khóa và IV
+                String encryptedContent = AESUtil.encrypt(rawContent, secretKey, iv);
+
+// Chuyển IV thành Base64 để truyền qua mạng
+                String ivBase64 = Base64.getEncoder().encodeToString(iv.getIV());
+
+// Kết hợp IV và dữ liệu mã hóa thành chuỗi
+                String combinedContent = ivBase64 + ":" + encryptedContent;
+
+// Gói dữ liệu mã hóa vào ResponseWrapper
+                ResponseWrapper<String> response = new ResponseWrapper<>(combinedContent, 1);
+
+// Trả về ResponseEntity
+                return ResponseEntity.status(HttpStatus.OK).body(response);
+
             } else {
                 return ResponseEntity.status(HttpStatus.OK)
                         .body(new ResponseWrapper<>(null, 2));

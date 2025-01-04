@@ -19,6 +19,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 
 @RestController
 @RequestMapping("/user")
@@ -189,12 +190,28 @@ public class UserController {
         user.setResetCodeExpiry(null);
         userRepo.save(user);
 
+//        SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+//        ObjectMapper objectMapper = new ObjectMapper();
+//        String rawContent = objectMapper.writeValueAsString(user);
+//        String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
+//        return ResponseEntity.status(HttpStatus.OK)
+//                .body(new ResponseWrapper<>(encryptedContent, 1));
+
         SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+        IvParameterSpec iv = AESUtil.generateIV();
+
+        // Chuyển User thành JSON và mã hóa
         ObjectMapper objectMapper = new ObjectMapper();
         String rawContent = objectMapper.writeValueAsString(user);
-        String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
+        String encryptedContent = AESUtil.encrypt(rawContent, secretKey, iv);
+
+        // Kết hợp dữ liệu mã hóa và IV (Base64)
+        String ivBase64 = Base64.getEncoder().encodeToString(iv.getIV());
+        String result = ivBase64 + ":" + encryptedContent;
+
+        // Trả về response
         return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseWrapper<>(encryptedContent, 1));
+                .body(new ResponseWrapper<>(result, 1));
     }
 
     @PostMapping("/login")
@@ -208,14 +225,40 @@ public class UserController {
                 // Mã hóa mật khẩu đầu vào để so sánh
                 String passwordToCompare = DigestUtils.md5DigestAsHex(inputPassword.getBytes());
                 if (passwordToCompare.equals(user.getPassword())) {
+//                    SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+//
+//                    ObjectMapper objectMapper = new ObjectMapper();
+//                    String rawContent = objectMapper.writeValueAsString(user);
+//                    String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
+//
+//                    ResponseWrapper<String> response = new ResponseWrapper<>(encryptedContent, 1);
+//                    return ResponseEntity.status(HttpStatus.OK).body(response);
+
+                    // Tạo khóa từ chuỗi
                     SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
 
+// Tạo một IV ngẫu nhiên
+                    IvParameterSpec iv = AESUtil.generateIV();
+
+// Chuyển User thành JSON
                     ObjectMapper objectMapper = new ObjectMapper();
                     String rawContent = objectMapper.writeValueAsString(user);
-                    String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
 
-                    ResponseWrapper<String> response = new ResponseWrapper<>(encryptedContent, 1);
+// Mã hóa nội dung với khóa và IV
+                    String encryptedContent = AESUtil.encrypt(rawContent, secretKey, iv);
+
+// Chuyển IV thành Base64 để truyền đi
+                    String ivBase64 = Base64.getEncoder().encodeToString(iv.getIV());
+
+// Kết hợp IV và dữ liệu mã hóa thành một chuỗi
+                    String combinedContent = ivBase64 + ":" + encryptedContent;
+
+// Gói dữ liệu đã mã hóa vào ResponseWrapper
+                    ResponseWrapper<String> response = new ResponseWrapper<>(combinedContent, 1);
+
+// Trả về ResponseEntity
                     return ResponseEntity.status(HttpStatus.OK).body(response);
+
                 } else {
                     return ResponseEntity.status(HttpStatus.OK)
                             .body(new ResponseWrapper<>(null, 2)); // Sai mật khẩu
@@ -303,12 +346,38 @@ public class UserController {
 
             User savedUser = userRepo.save(user);
 
+//            SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+//            ObjectMapper objectMapper = new ObjectMapper();
+//            String rawContent = objectMapper.writeValueAsString(savedUser);
+//            String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
+//            ResponseWrapper<String> responsee = new ResponseWrapper<>(encryptedContent, 1);
+//            return ResponseEntity.status(HttpStatus.OK).body(responsee);
+
+            // Tạo khóa từ chuỗi
             SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+
+// Tạo một IV ngẫu nhiên
+            IvParameterSpec iv = AESUtil.generateIV();
+
+// Chuyển đối tượng savedUser thành JSON
             ObjectMapper objectMapper = new ObjectMapper();
             String rawContent = objectMapper.writeValueAsString(savedUser);
-            String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
-            ResponseWrapper<String> responsee = new ResponseWrapper<>(encryptedContent, 1);
+
+// Mã hóa dữ liệu với khóa và IV
+            String encryptedContent = AESUtil.encrypt(rawContent, secretKey, iv);
+
+// Chuyển IV thành Base64 để truyền đi an toàn
+            String ivBase64 = Base64.getEncoder().encodeToString(iv.getIV());
+
+// Kết hợp IV và dữ liệu mã hóa thành chuỗi duy nhất
+            String combinedContent = ivBase64 + ":" + encryptedContent;
+
+// Gói dữ liệu đã mã hóa vào ResponseWrapper
+            ResponseWrapper<String> responsee = new ResponseWrapper<>(combinedContent, 1);
+
+// Trả về ResponseEntity
             return ResponseEntity.status(HttpStatus.OK).body(responsee);
+
         } catch (Exception e) {
             response.put("status", 3);
             response.put("message", "An error occurred during registration: " + e.getMessage());
@@ -482,12 +551,38 @@ public class UserController {
         try {
             Optional<User> user = userRepo.findById(new ObjectId(id));
             if (user.isPresent()) {
+//                SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+//                ObjectMapper objectMapper = new ObjectMapper();
+//                String rawContent = objectMapper.writeValueAsString(user.get());
+//                String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
+//                return ResponseEntity.status(HttpStatus.OK)
+//                        .body(new ResponseWrapper<>(encryptedContent, 1));
+
+                // Tạo khóa từ chuỗi
                 SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+
+// Tạo một IV ngẫu nhiên
+                IvParameterSpec iv = AESUtil.generateIV();
+
+// Chuyển đối tượng user thành JSON
                 ObjectMapper objectMapper = new ObjectMapper();
                 String rawContent = objectMapper.writeValueAsString(user.get());
-                String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
-                return ResponseEntity.status(HttpStatus.OK)
-                        .body(new ResponseWrapper<>(encryptedContent, 1));
+
+// Mã hóa nội dung JSON với khóa và IV
+                String encryptedContent = AESUtil.encrypt(rawContent, secretKey, iv);
+
+// Chuyển IV thành Base64 để truyền đi
+                String ivBase64 = Base64.getEncoder().encodeToString(iv.getIV());
+
+// Kết hợp IV và dữ liệu mã hóa thành một chuỗi duy nhất
+                String combinedContent = ivBase64 + ":" + encryptedContent;
+
+// Gói dữ liệu mã hóa vào ResponseWrapper
+                ResponseWrapper<String> response = new ResponseWrapper<>(combinedContent, 1);
+
+// Trả về ResponseEntity
+                return ResponseEntity.status(HttpStatus.OK).body(response);
+
             } else {
                 return ResponseEntity.status(HttpStatus.OK)
                         .body(new ResponseWrapper<>(null, 2));
@@ -585,12 +680,38 @@ public class UserController {
                 response.put("message", "User updated successfully");
                 response.put("updatedUser", updatedUser);
 
+//                SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+//                ObjectMapper objectMapper = new ObjectMapper();
+//                String rawContent = objectMapper.writeValueAsString(updatedUser);
+//                String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
+//                return ResponseEntity.status(HttpStatus.OK)
+//                        .body(new ResponseWrapper<>(encryptedContent, 1));
+
+                // Tạo khóa từ chuỗi
                 SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+
+// Tạo một IV ngẫu nhiên
+                IvParameterSpec iv = AESUtil.generateIV();
+
+// Chuyển đối tượng updatedUser thành JSON
                 ObjectMapper objectMapper = new ObjectMapper();
                 String rawContent = objectMapper.writeValueAsString(updatedUser);
-                String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
-                return ResponseEntity.status(HttpStatus.OK)
-                        .body(new ResponseWrapper<>(encryptedContent, 1));
+
+// Mã hóa nội dung JSON với khóa và IV
+                String encryptedContent = AESUtil.encrypt(rawContent, secretKey, iv);
+
+// Chuyển IV thành Base64 để dễ dàng truyền đi
+                String ivBase64 = Base64.getEncoder().encodeToString(iv.getIV());
+
+// Kết hợp IV và dữ liệu mã hóa thành một chuỗi định dạng `IV:CipherText`
+                String combinedContent = ivBase64 + ":" + encryptedContent;
+
+// Gói dữ liệu mã hóa vào ResponseWrapper
+                ResponseWrapper<String> responsee = new ResponseWrapper<>(combinedContent, 1);
+
+// Trả về ResponseEntity
+                return ResponseEntity.status(HttpStatus.OK).body(responsee);
+
             } else {
                 return ResponseEntity.status(HttpStatus.OK)
                         .body(new ResponseWrapper<>(null, 2));

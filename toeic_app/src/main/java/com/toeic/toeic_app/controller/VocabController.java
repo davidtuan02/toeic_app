@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import java.util.*;
 
 @RestController
@@ -62,12 +63,38 @@ public class VocabController {
             response.put("message", "Vocabulary saved successfully");
             response.put("data", createdVocabulary);
 
+//            SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+//            ObjectMapper objectMapper = new ObjectMapper();
+//            String rawContent = objectMapper.writeValueAsString(createdVocabulary);
+//            String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
+//            return ResponseEntity.status(HttpStatus.OK)
+//                    .body(new ResponseWrapper<>(encryptedContent, 1));
+
+            // Tạo khóa từ chuỗi
             SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+
+// Tạo một IV ngẫu nhiên
+            IvParameterSpec iv = AESUtil.generateIV();
+
+// Chuyển đối tượng 'createdVocabulary' thành chuỗi JSON
             ObjectMapper objectMapper = new ObjectMapper();
             String rawContent = objectMapper.writeValueAsString(createdVocabulary);
-            String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseWrapper<>(encryptedContent, 1));
+
+// Mã hóa dữ liệu với khóa và IV
+            String encryptedContent = AESUtil.encrypt(rawContent, secretKey, iv);
+
+// Chuyển IV thành Base64 để truyền qua mạng
+            String ivBase64 = Base64.getEncoder().encodeToString(iv.getIV());
+
+// Kết hợp IV và dữ liệu mã hóa thành chuỗi
+            String combinedContent = ivBase64 + ":" + encryptedContent;
+
+// Gói dữ liệu mã hóa vào ResponseWrapper
+            ResponseWrapper<String> responsee = new ResponseWrapper<>(combinedContent, 1);
+
+// Trả về ResponseEntity
+            return ResponseEntity.status(HttpStatus.OK).body(responsee);
+
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.OK)
@@ -170,13 +197,42 @@ public class VocabController {
 
     @GetMapping("all")
     public ResponseEntity<?> getAll() throws Exception {
+//        List<?> list = vocabRepo.findAll();
+//        SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+//        ObjectMapper objectMapper = new ObjectMapper();
+//        String rawContent = objectMapper.writeValueAsString(list);
+//        String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
+//        return ResponseEntity.status(HttpStatus.OK)
+//                .body(new ResponseWrapper<>(encryptedContent, 1));
+
+        // Lấy danh sách từ repository
         List<?> list = vocabRepo.findAll();
+
+// Tạo khóa từ chuỗi
         SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+
+// Tạo một IV ngẫu nhiên
+        IvParameterSpec iv = AESUtil.generateIV();
+
+// Chuyển danh sách thành chuỗi JSON
         ObjectMapper objectMapper = new ObjectMapper();
         String rawContent = objectMapper.writeValueAsString(list);
-        String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ResponseWrapper<>(encryptedContent, 1));
+
+// Mã hóa dữ liệu với khóa và IV
+        String encryptedContent = AESUtil.encrypt(rawContent, secretKey, iv);
+
+// Chuyển IV thành Base64 để truyền qua mạng
+        String ivBase64 = Base64.getEncoder().encodeToString(iv.getIV());
+
+// Kết hợp IV và dữ liệu mã hóa thành chuỗi
+        String combinedContent = ivBase64 + ":" + encryptedContent;
+
+// Gói dữ liệu mã hóa vào ResponseWrapper
+        ResponseWrapper<String> response = new ResponseWrapper<>(combinedContent, 1);
+
+// Trả về ResponseEntity
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+
     }
 
 //    @GetMapping("/search")
@@ -214,12 +270,38 @@ public class VocabController {
             } else {
                 results = vocabRepo.findByText(key);
             }
+//            SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+//            ObjectMapper objectMapper = new ObjectMapper();
+//            String rawContent = objectMapper.writeValueAsString(results);
+//            String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
+//            return ResponseEntity.status(HttpStatus.OK)
+//                    .body(new ResponseWrapper<>(encryptedContent, 1));
+
+            // Tạo khóa từ chuỗi
             SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+
+// Tạo một IV ngẫu nhiên
+            IvParameterSpec iv = AESUtil.generateIV();
+
+// Chuyển danh sách kết quả thành JSON
             ObjectMapper objectMapper = new ObjectMapper();
             String rawContent = objectMapper.writeValueAsString(results);
-            String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseWrapper<>(encryptedContent, 1));
+
+// Mã hóa nội dung JSON với khóa và IV
+            String encryptedContent = AESUtil.encrypt(rawContent, secretKey, iv);
+
+// Chuyển IV thành Base64 để dễ dàng truyền đi
+            String ivBase64 = Base64.getEncoder().encodeToString(iv.getIV());
+
+// Kết hợp IV và dữ liệu mã hóa thành một chuỗi định dạng `IV:CipherText`
+            String combinedContent = ivBase64 + ":" + encryptedContent;
+
+// Gói dữ liệu mã hóa vào ResponseWrapper
+            ResponseWrapper<String> response = new ResponseWrapper<>(combinedContent, 1);
+
+// Trả về ResponseEntity
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseWrapper<>(null, 2));
@@ -259,13 +341,42 @@ public class VocabController {
             }
 
             // Truy vấn MongoDB để lấy các từ vựng theo topic ngẫu nhiên
+//            List<Vocabulary> randomVocab = vocabRepo.findRandomByTopic(topic, limit);
+//            SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+//            ObjectMapper objectMapper = new ObjectMapper();
+//            String rawContent = objectMapper.writeValueAsString(randomVocab);
+//            String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
+//            return ResponseEntity.status(HttpStatus.OK)
+//                    .body(new ResponseWrapper<>(encryptedContent, 1));
+
+            // Lấy danh sách từ vựng ngẫu nhiên theo chủ đề
             List<Vocabulary> randomVocab = vocabRepo.findRandomByTopic(topic, limit);
+
+// Tạo khóa từ chuỗi
             SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+
+// Tạo một IV ngẫu nhiên
+            IvParameterSpec iv = AESUtil.generateIV();
+
+// Chuyển danh sách randomVocab thành JSON
             ObjectMapper objectMapper = new ObjectMapper();
             String rawContent = objectMapper.writeValueAsString(randomVocab);
-            String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseWrapper<>(encryptedContent, 1));
+
+// Mã hóa nội dung JSON với khóa và IV
+            String encryptedContent = AESUtil.encrypt(rawContent, secretKey, iv);
+
+// Chuyển IV thành Base64 để dễ dàng truyền đi
+            String ivBase64 = Base64.getEncoder().encodeToString(iv.getIV());
+
+// Kết hợp IV và dữ liệu mã hóa thành một chuỗi định dạng `IV:CipherText`
+            String combinedContent = ivBase64 + ":" + encryptedContent;
+
+// Gói dữ liệu mã hóa vào ResponseWrapper
+            ResponseWrapper<String> response = new ResponseWrapper<>(combinedContent, 1);
+
+// Trả về ResponseEntity
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new ResponseWrapper<>(null, 3));
