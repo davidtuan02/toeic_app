@@ -402,29 +402,21 @@ public class UserController {
 //            ResponseWrapper<String> responsee = new ResponseWrapper<>(encryptedContent, 1);
 //            return ResponseEntity.status(HttpStatus.OK).body(responsee);
 
-            // Tạo khóa từ chuỗi
             SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
 
-// Tạo một IV ngẫu nhiên
             IvParameterSpec iv = AESUtil.generateIV();
 
-// Chuyển đối tượng savedUser thành JSON
             ObjectMapper objectMapper = new ObjectMapper();
             String rawContent = objectMapper.writeValueAsString(savedUser);
 
-// Mã hóa dữ liệu với khóa và IV
             String encryptedContent = AESUtil.encrypt(rawContent, secretKey, iv);
 
-// Chuyển IV thành Base64 để truyền đi an toàn
             String ivBase64 = Base64.getEncoder().encodeToString(iv.getIV());
 
-// Kết hợp IV và dữ liệu mã hóa thành chuỗi duy nhất
             String combinedContent = ivBase64 + ":" + encryptedContent;
 
-// Gói dữ liệu đã mã hóa vào ResponseWrapper
-            ResponseWrapper<String> responsee = new ResponseWrapper<>(combinedContent, 1);
+            ResponseWrapper<String> responsee = new ResponseWrapper<>(encryptedContent, 1);
 
-// Trả về ResponseEntity
             return ResponseEntity.status(HttpStatus.OK).body(responsee);
 
         } catch (Exception e) {
