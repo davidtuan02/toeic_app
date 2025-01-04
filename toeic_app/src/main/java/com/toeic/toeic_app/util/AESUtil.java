@@ -36,7 +36,7 @@ public class AESUtil {
 //        return new String(originalBytes);
 //    }
 
-    private static final String AES_CBC_PADDING = "AES/CBC/PKCS5Padding";
+    public static final String AES_CBC_PADDING = "AES/CBC/PKCS5Padding";
 
     // Tạo khóa từ chuỗi
     public static SecretKey generateKeyFromString(String keyString) {
@@ -68,20 +68,40 @@ public class AESUtil {
     }
 
     // Giải mã dữ liệu
+//    public static String decrypt(String encryptedData, SecretKey secretKey) throws Exception {
+//        byte[] combined = Base64.getDecoder().decode(encryptedData);
+//
+//        // Tách IV và dữ liệu mã hóa
+//        byte[] iv = new byte[16];
+//        byte[] encryptedBytes = new byte[combined.length - iv.length];
+//        System.arraycopy(combined, 0, iv, 0, iv.length);
+//        System.arraycopy(combined, iv.length, encryptedBytes, 0, encryptedBytes.length);
+//
+//        IvParameterSpec ivSpec = new IvParameterSpec(iv);
+//
+//        Cipher cipher = Cipher.getInstance(AES_CBC_PADDING);
+//        cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
+//        byte[] originalBytes = cipher.doFinal(encryptedBytes);
+//        return new String(originalBytes, StandardCharsets.UTF_8);
+//    }
+
     public static String decrypt(String encryptedData, SecretKey secretKey) throws Exception {
         byte[] combined = Base64.getDecoder().decode(encryptedData);
 
         // Tách IV và dữ liệu mã hóa
-        byte[] iv = new byte[16];
+        byte[] iv = new byte[16];  // IV có độ dài 16 byte
         byte[] encryptedBytes = new byte[combined.length - iv.length];
-        System.arraycopy(combined, 0, iv, 0, iv.length);
-        System.arraycopy(combined, iv.length, encryptedBytes, 0, encryptedBytes.length);
 
-        IvParameterSpec ivSpec = new IvParameterSpec(iv);
+        System.arraycopy(combined, 0, iv, 0, iv.length); // Lấy IV từ đầu dữ liệu mã hóa
+        System.arraycopy(combined, iv.length, encryptedBytes, 0, encryptedBytes.length); // Lấy phần dữ liệu mã hóa
+
+        IvParameterSpec ivSpec = new IvParameterSpec(iv); // Khởi tạo IvParameterSpec từ IV
 
         Cipher cipher = Cipher.getInstance(AES_CBC_PADDING);
-        cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec); // Sử dụng IV trong quá trình giải mã
+
         byte[] originalBytes = cipher.doFinal(encryptedBytes);
         return new String(originalBytes, StandardCharsets.UTF_8);
     }
+
 }

@@ -676,11 +676,49 @@ public class QuestionController {
 //        }
 //    }
 
+//    @GetMapping("/audio/{id}")
+//    public ResponseEntity<?> getAudioByQuestionId(@PathVariable String id) {
+//        try {
+//            ObjectId objectId = new ObjectId(id);
+//
+//            Optional<Question> optionalQuestion = questionRepo.findById(objectId);
+//
+//            if (!optionalQuestion.isPresent()) {
+//                return ResponseEntity.status(HttpStatus.OK).body(null);
+//            }
+//
+//            Question question = optionalQuestion.get();
+//            String audioFileUrl = question.getQuestionAudio();
+//
+//            // Chỉ lấy tên tệp từ URL nếu audioFileUrl là một URL
+//            String fileName = audioFileUrl.substring(audioFileUrl.lastIndexOf("/") + 1);
+//
+//            // Tạo đường dẫn tệp cục bộ
+//            Path filePath = Paths.get("/data/uploads/audio").resolve(fileName);
+//
+//            // Kiểm tra xem tệp có tồn tại không
+//            if (!Files.exists(filePath)) {
+//                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("File not found");
+//            }
+//
+//            FileSystemResource fileResource = new FileSystemResource(filePath.toFile());
+//
+//            return ResponseEntity.ok()
+//                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filePath.getFileName().toString() + "\"")
+//                    .contentType(MediaType.parseMediaType("audio/mpeg"))
+//                    .body(fileResource);
+//
+//        } catch (IllegalArgumentException e) {
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid ID format");
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
+//        }
+//    }
+
     @GetMapping("/audio/{id}")
     public ResponseEntity<?> getAudioByQuestionId(@PathVariable String id) {
         try {
             ObjectId objectId = new ObjectId(id);
-
             Optional<Question> optionalQuestion = questionRepo.findById(objectId);
 
             if (!optionalQuestion.isPresent()) {
@@ -689,14 +727,9 @@ public class QuestionController {
 
             Question question = optionalQuestion.get();
             String audioFileUrl = question.getQuestionAudio();
-
-            // Chỉ lấy tên tệp từ URL nếu audioFileUrl là một URL
             String fileName = audioFileUrl.substring(audioFileUrl.lastIndexOf("/") + 1);
+            Path filePath = Paths.get("/home/ubuntu/toeic_app/uploads/audio").resolve(fileName);
 
-            // Tạo đường dẫn tệp cục bộ
-            Path filePath = Paths.get("/data/uploads/audio").resolve(fileName);
-
-            // Kiểm tra xem tệp có tồn tại không
             if (!Files.exists(filePath)) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("File not found");
             }
@@ -714,6 +747,7 @@ public class QuestionController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
         }
     }
+
 
 
 
