@@ -380,6 +380,7 @@ public class UserController {
             Date currentDate = new Date();
             user.setCreatedDate(currentDate);
             user.setUpdatedDate(currentDate);
+            user.setTwoAuth(false);
             String password = user.getPassword();
             if (!isMD5Hash(password)) {
                 password = DigestUtils.md5DigestAsHex(password.getBytes());
@@ -707,11 +708,70 @@ public class UserController {
                     user.setPhone(userDetails.getPhone());
                 }
 
-                if (userDetails.isTwoAuth) {
-                    user.setTwoAuth(userDetails.isTwoAuth);
-                }
-
                 user.setUpdatedDate(new Date());
+                User updatedUser = userRepo.save(user);
+
+                // Prepare the success response
+                response.put("status", HttpStatus.OK.value());
+                response.put("message", "User updated successfully");
+                response.put("updatedUser", updatedUser);
+
+//                SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+//                ObjectMapper objectMapper = new ObjectMapper();
+//                String rawContent = objectMapper.writeValueAsString(updatedUser);
+//                String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
+//                return ResponseEntity.status(HttpStatus.OK)
+//                        .body(new ResponseWrapper<>(encryptedContent, 1));
+
+                // Tạo khóa từ chuỗi
+//                SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+//
+//// Tạo một IV ngẫu nhiên
+//                IvParameterSpec iv = AESUtil.generateIV();
+//
+//// Chuyển đối tượng updatedUser thành JSON
+//                ObjectMapper objectMapper = new ObjectMapper();
+//                String rawContent = objectMapper.writeValueAsString(updatedUser);
+//
+//// Mã hóa nội dung JSON với khóa và IV
+//                String encryptedContent = AESUtil.encrypt(rawContent, secretKey, iv);
+//
+//// Chuyển IV thành Base64 để dễ dàng truyền đi
+//                String ivBase64 = Base64.getEncoder().encodeToString(iv.getIV());
+//
+//// Kết hợp IV và dữ liệu mã hóa thành một chuỗi định dạng `IV:CipherText`
+//                String combinedContent = ivBase64 + ":" + encryptedContent;
+//
+//// Gói dữ liệu mã hóa vào ResponseWrapper
+//                ResponseWrapper<String> responsee = new ResponseWrapper<>(combinedContent, 1);
+
+// Trả về ResponseEntity
+                return ResponseEntity.status(HttpStatus.OK).body(response);
+
+            } else {
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(new ResponseWrapper<>(null, 2));
+            }
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseWrapper<>(null, 2));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseWrapper<>(null, 2));
+        }
+    }
+
+    @PutMapping("/update-auth/{id}")
+    public ResponseEntity<?> updateAuth(@PathVariable("id") String id, @RequestBody String isTwoAuth) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            Optional<User> userOptional = userRepo.findById(new ObjectId(id));
+            if (userOptional.isPresent()) {
+                User user = userOptional.get();
+
+                user.setTwoAuth(Boolean.valueOf(isTwoAuth));
+
                 User updatedUser = userRepo.save(user);
 
                 // Prepare the success response
