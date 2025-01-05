@@ -848,29 +848,20 @@ public class UserController {
 
 
     @PostMapping("/update-auth-status")
-    public ResponseEntity<Map<String, Object>> updateTwoAuth(@RequestBody AuthDTO authDTO) {
-        Map<String, Object> response = new HashMap<>();
+    public ResponseEntity<?> updateTwoAuth(@RequestBody AuthDTO authDTO) {
+        try {
 
-        // Ensure the ObjectId is passed correctly or convert the string ID to ObjectId
-        if (authDTO.getId() == null) {
-            response.put("status", "error");
-            response.put("message", "User ID is missing.");
-            return ResponseEntity.badRequest().body(response);
+            if (authDTO.getId() == null) {
+                return ResponseEntity.ok().body(new ResponseWrapper<>(null, 2));
+            }
+            User user = userRepo.findById(authDTO.getId()).orElseThrow(() -> new RuntimeException("User not found"));
+            user.setIsTwoAuth(authDTO.isTwoAuth);  // Make sure you're setting the correct field!
+            User updatedUser = userRepo.save(user);
+            return ResponseEntity.ok().body(new ResponseWrapper<>(updatedUser, 1));
         }
-
-        // Find the user by the provided ObjectId
-        User user = userRepo.findById(authDTO.getId()).orElseThrow(() -> new RuntimeException("User not found"));
-
-        // Update the isTwoAuth field (ensure you're updating the correct field)
-        user.setIsTwoAuth(authDTO.isTwoAuth);  // Make sure you're setting the correct field!
-
-        // Save and return the updated user
-        User updatedUser = userRepo.save(user);
-
-        response.put("status", "success");
-        response.put("content", updatedUser);
-        response.put("code", 1);
-        return ResponseEntity.ok(response);
+        catch (Exception e) {
+            return ResponseEntity.ok().body(new ResponseWrapper<>(null, 3));
+        }
     }
 
 
