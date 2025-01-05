@@ -1,6 +1,7 @@
 package com.toeic.toeic_app.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.toeic.toeic_app.dto.AuthDTO;
 import com.toeic.toeic_app.model.User;
 import com.toeic.toeic_app.repository.UserRepo;
 import com.toeic.toeic_app.util.AESUtil;
@@ -380,7 +381,7 @@ public class UserController {
             Date currentDate = new Date();
             user.setCreatedDate(currentDate);
             user.setUpdatedDate(currentDate);
-            user.setTwoAuth(false);
+            user.setIsTwoAuth(false);
             String password = user.getPassword();
             if (!isMD5Hash(password)) {
                 password = DigestUtils.md5DigestAsHex(password.getBytes());
@@ -761,71 +762,68 @@ public class UserController {
         }
     }
 
-    @PutMapping("/update-auth/{id}")
-    public ResponseEntity<?> updateAuth(@PathVariable("id") String id, @RequestBody String isTwoAuth) {
-        Map<String, Object> response = new HashMap<>();
-
-        try {
-            Optional<User> userOptional = userRepo.findById(new ObjectId(id));
-            if (userOptional.isPresent()) {
-                User user = userOptional.get();
-
-                user.setTwoAuth(Boolean.valueOf(isTwoAuth));
-
-                User updatedUser = userRepo.save(user);
-
-                // Prepare the success response
-                response.put("status", HttpStatus.OK.value());
-                response.put("message", "User updated successfully");
-                response.put("updatedUser", updatedUser);
-
-//                SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
-//                ObjectMapper objectMapper = new ObjectMapper();
-//                String rawContent = objectMapper.writeValueAsString(updatedUser);
-//                String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
+//    @PutMapping("/update-auth/{id}")
+//    public ResponseEntity<?> updateAuth(@PathVariable("id") String id, @RequestBody String isTwoAuth) {
+//        Map<String, Object> response = new HashMap<>();
+//
+//        try {
+//            Optional<User> userOptional = userRepo.findById(new ObjectId(id));
+//            if (userOptional.isPresent()) {
+//                User user = userOptional.get();
+//
+//                user.setTwoAuth(Boolean.valueOf(isTwoAuth));
+//
+//                User updatedUser = userRepo.save(user);
+//
+//                // Prepare the success response
+//                response.put("status", HttpStatus.OK.value());
+//                response.put("message", "User updated successfully");
+//                response.put("updatedUser", updatedUser);
+//
+////                SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+////                ObjectMapper objectMapper = new ObjectMapper();
+////                String rawContent = objectMapper.writeValueAsString(updatedUser);
+////                String encryptedContent = AESUtil.encrypt(rawContent, secretKey);
+////                return ResponseEntity.status(HttpStatus.OK)
+////                        .body(new ResponseWrapper<>(encryptedContent, 1));
+//
+//                // Tạo khóa từ chuỗi
+////                SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+////
+////// Tạo một IV ngẫu nhiên
+////                IvParameterSpec iv = AESUtil.generateIV();
+////
+////// Chuyển đối tượng updatedUser thành JSON
+////                ObjectMapper objectMapper = new ObjectMapper();
+////                String rawContent = objectMapper.writeValueAsString(updatedUser);
+////
+////// Mã hóa nội dung JSON với khóa và IV
+////                String encryptedContent = AESUtil.encrypt(rawContent, secretKey, iv);
+////
+////// Chuyển IV thành Base64 để dễ dàng truyền đi
+////                String ivBase64 = Base64.getEncoder().encodeToString(iv.getIV());
+////
+////// Kết hợp IV và dữ liệu mã hóa thành một chuỗi định dạng `IV:CipherText`
+////                String combinedContent = ivBase64 + ":" + encryptedContent;
+////
+////// Gói dữ liệu mã hóa vào ResponseWrapper
+////                ResponseWrapper<String> responsee = new ResponseWrapper<>(combinedContent, 1);
+//
+//// Trả về ResponseEntity
+//                return ResponseEntity.status(HttpStatus.OK).body(response);
+//
+//            } else {
 //                return ResponseEntity.status(HttpStatus.OK)
-//                        .body(new ResponseWrapper<>(encryptedContent, 1));
-
-                // Tạo khóa từ chuỗi
-//                SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
-//
-//// Tạo một IV ngẫu nhiên
-//                IvParameterSpec iv = AESUtil.generateIV();
-//
-//// Chuyển đối tượng updatedUser thành JSON
-//                ObjectMapper objectMapper = new ObjectMapper();
-//                String rawContent = objectMapper.writeValueAsString(updatedUser);
-//
-//// Mã hóa nội dung JSON với khóa và IV
-//                String encryptedContent = AESUtil.encrypt(rawContent, secretKey, iv);
-//
-//// Chuyển IV thành Base64 để dễ dàng truyền đi
-//                String ivBase64 = Base64.getEncoder().encodeToString(iv.getIV());
-//
-//// Kết hợp IV và dữ liệu mã hóa thành một chuỗi định dạng `IV:CipherText`
-//                String combinedContent = ivBase64 + ":" + encryptedContent;
-//
-//// Gói dữ liệu mã hóa vào ResponseWrapper
-//                ResponseWrapper<String> responsee = new ResponseWrapper<>(combinedContent, 1);
-
-// Trả về ResponseEntity
-                return ResponseEntity.status(HttpStatus.OK).body(response);
-
-            } else {
-                return ResponseEntity.status(HttpStatus.OK)
-                        .body(new ResponseWrapper<>(null, 2));
-            }
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseWrapper<>(null, 2));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseWrapper<>(null, 2));
-        }
-    }
-
-
-
+//                        .body(new ResponseWrapper<>(null, 2));
+//            }
+//        } catch (IllegalArgumentException e) {
+//            return ResponseEntity.status(HttpStatus.OK)
+//                    .body(new ResponseWrapper<>(null, 2));
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.OK)
+//                    .body(new ResponseWrapper<>(null, 2));
+//        }
+//    }
 
     @DeleteMapping("/deleteUsers")
     public ResponseEntity<Map<String, Object>> deleteUsers(@RequestParam List<String> ids) {
@@ -849,38 +847,32 @@ public class UserController {
     }
 
 
-    @PostMapping("/update-auth-status/{id}")
-    public ResponseEntity<?> updateAuthStatus(@RequestBody Boolean isTwoAuth, @PathVariable("id") String id) {
-        try {
-            // Convert the String id to ObjectId for MongoDB
-            ObjectId objectId = new ObjectId(id);
+    @PostMapping("/update-auth-status")
+    public ResponseEntity<Map<String, Object>> updateTwoAuth(@RequestBody AuthDTO authDTO) {
+        Map<String, Object> response = new HashMap<>();
 
-            // Find the user by id
-            Optional<User> userOptional = userRepo.findById(objectId);
-
-            if (userOptional.isPresent()) {
-                // Get the user object
-                User user = userOptional.get();
-
-                // Update the isTwoAuth field
-                user.setTwoAuth(isTwoAuth);
-
-                // Save the updated user back to the repository
-                userRepo.save(user);
-
-                // Return success response
-                return ResponseEntity.status(HttpStatus.OK)
-                        .body(new ResponseWrapper<>(null, 1));  // Success status code
-            } else {
-                // User not found
-                return ResponseEntity.status(HttpStatus.OK).body(new ResponseWrapper<>(null, 2));  // User not found status code
-            }
-        } catch (Exception e) {
-            // Handle exceptions
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new ResponseWrapper<>(null, 3));  // Error status code
+        // Ensure the ObjectId is passed correctly or convert the string ID to ObjectId
+        if (authDTO.getId() == null) {
+            response.put("status", "error");
+            response.put("message", "User ID is missing.");
+            return ResponseEntity.badRequest().body(response);
         }
+
+        // Find the user by the provided ObjectId
+        User user = userRepo.findById(authDTO.getId()).orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Update the isTwoAuth field (ensure you're updating the correct field)
+        user.setIsTwoAuth(authDTO.isTwoAuth);  // Make sure you're setting the correct field!
+
+        // Save and return the updated user
+        User updatedUser = userRepo.save(user);
+
+        response.put("status", "success");
+        response.put("content", updatedUser);
+        response.put("code", 1);
+        return ResponseEntity.ok(response);
     }
+
 
 
 
