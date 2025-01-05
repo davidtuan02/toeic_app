@@ -241,7 +241,7 @@ public class QuestionController {
                     if (!Files.exists(audioFilePath.getParent())) {
                         Files.createDirectories(audioFilePath.getParent());
                     }
-                    Files.write(audioFilePath, questionImg.getBytes());
+                    Files.write(audioFilePath, file.getBytes());
 
                     // Tạo URL đầy đủ cho file âm thanh
                     String audioFileUrl = serverBaseUrl + "/audio/" + audioFileName;
