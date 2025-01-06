@@ -24,4 +24,6 @@ public class Vocabulary {
     private String pronunciation;
     private String meaning;
     private String example;
+    private String linkSound;
+    private String exampleVn;
 }

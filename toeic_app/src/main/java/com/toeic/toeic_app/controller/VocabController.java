@@ -170,6 +170,8 @@ public class VocabController {
             vocabToUpdate.setExample(vocabulary.getExample());
             vocabToUpdate.setMeaning(vocabulary.getMeaning());
             vocabToUpdate.setTopic(vocabulary.getTopic());
+            vocabToUpdate.setExampleVn(vocabulary.getExampleVn());
+            vocabToUpdate.setLinkSound(vocabulary.getLinkSound());
             // Set other fields here as necessary
 
             Vocabulary updatedVocabulary = vocabRepo.save(vocabToUpdate);

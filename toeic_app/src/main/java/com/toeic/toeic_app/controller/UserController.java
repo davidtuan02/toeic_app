@@ -299,20 +299,64 @@ public class UserController {
 //        }
 //    }
 
+//    @PostMapping("/decrypt")
+//    public ResponseEntity<ResponseWrapper<Object>> decryptContent(@RequestBody Map<String, String> requestBody) {
+//        try {
+//            // Lấy content mã hóa từ RequestBody
+//            String encryptedContent = requestBody.get("content");
+//
+//            // Giải mã Base64 để lấy ra ciphertext và IV
+//            byte[] combined = Base64.getDecoder().decode(encryptedContent);
+//
+//            // Tách IV (16 byte đầu tiên) và ciphertext (phần còn lại)
+//            byte[] iv = new byte[16];
+//            byte[] encryptedBytes = new byte[combined.length - iv.length];
+//            System.arraycopy(combined, 0, iv, 0, iv.length);
+//            System.arraycopy(combined, iv.length, encryptedBytes, 0, encryptedBytes.length);
+//
+//            // Khởi tạo IvParameterSpec từ IV
+//            IvParameterSpec ivSpec = new IvParameterSpec(iv);
+//
+//            // Tạo khóa AES (phải giống với khóa dùng để mã hóa)
+//            SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+//
+//            // Giải mã dữ liệu
+//            Cipher cipher = Cipher.getInstance(AES_CBC_PADDING);
+//            cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
+//            byte[] originalBytes = cipher.doFinal(encryptedBytes);
+//
+//            // Chuyển đổi dữ liệu đã giải mã thành chuỗi
+//            String decryptedContent = new String(originalBytes, StandardCharsets.UTF_8);
+//
+//            // Parse JSON đã giải mã về Object (hoặc bất kỳ model nào bạn muốn)
+//            ObjectMapper objectMapper = new ObjectMapper();
+//            Object originalContent = objectMapper.readValue(decryptedContent, Object.class);
+//
+//            // Trả về response với content đã giải mã
+//            ResponseWrapper<Object> response = new ResponseWrapper<>(originalContent, 1);
+//            return ResponseEntity.status(HttpStatus.OK).body(response);
+//        } catch (Exception e) {
+//            // Xử lý lỗi
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+//                    .body(new ResponseWrapper<>(null, 3)); // Lỗi giải mã hoặc dữ liệu không hợp lệ
+//        }
+//    }
+
     @PostMapping("/decrypt")
     public ResponseEntity<ResponseWrapper<Object>> decryptContent(@RequestBody Map<String, String> requestBody) {
         try {
             // Lấy content mã hóa từ RequestBody
             String encryptedContent = requestBody.get("content");
 
-            // Giải mã Base64 để lấy ra ciphertext và IV
-            byte[] combined = Base64.getDecoder().decode(encryptedContent);
+            // Tách IV và ciphertext dựa trên dấu ":"
+            String[] parts = encryptedContent.split(":");
+            if (parts.length != 2) {
+                throw new IllegalArgumentException("Invalid encrypted content format");
+            }
 
-            // Tách IV (16 byte đầu tiên) và ciphertext (phần còn lại)
-            byte[] iv = new byte[16];
-            byte[] encryptedBytes = new byte[combined.length - iv.length];
-            System.arraycopy(combined, 0, iv, 0, iv.length);
-            System.arraycopy(combined, iv.length, encryptedBytes, 0, encryptedBytes.length);
+            // Decode IV và ciphertext từ Base64
+            byte[] iv = Base64.getDecoder().decode(parts[0]);
+            byte[] encryptedBytes = Base64.getDecoder().decode(parts[1]);
 
             // Khởi tạo IvParameterSpec từ IV
             IvParameterSpec ivSpec = new IvParameterSpec(iv);
@@ -321,7 +365,7 @@ public class UserController {
             SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
 
             // Giải mã dữ liệu
-            Cipher cipher = Cipher.getInstance(AES_CBC_PADDING);
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
             byte[] originalBytes = cipher.doFinal(encryptedBytes);
 
@@ -341,6 +385,7 @@ public class UserController {
                     .body(new ResponseWrapper<>(null, 3)); // Lỗi giải mã hoặc dữ liệu không hợp lệ
         }
     }
+
 
 
     @PostMapping("/register")
