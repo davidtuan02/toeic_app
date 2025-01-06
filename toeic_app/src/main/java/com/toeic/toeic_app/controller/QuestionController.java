@@ -293,21 +293,30 @@ public class QuestionController {
             Question savedQuestion = questionRepo.save(question);
 
             // Log thông tin câu hỏi đã lưu
-            System.out.println("Question saved: " + savedQuestion);
+            SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+            IvParameterSpec iv = AESUtil.generateIV();
 
-            // Trả về câu hỏi đã lưu dưới dạng JSON
-            return ResponseEntity.status(HttpStatus.OK).body(Map.of("status", 1, "data", savedQuestion));
+            // Chuyển User thành JSON và mã hóa
+            ObjectMapper objectMapper = new ObjectMapper();
+            String rawContent = objectMapper.writeValueAsString(savedQuestion);
+            String encryptedContent = AESUtil.encrypt(rawContent, secretKey, iv);
+
+            // Kết hợp dữ liệu mã hóa và IV (Base64)
+            String ivBase64 = Base64.getEncoder().encodeToString(iv.getIV());
+            String result = ivBase64 + ":" + encryptedContent;
+
+            // Trả về response
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseWrapper<>(result, 1));
 
         } catch (IOException e) {
-            // Trả về lỗi nội bộ với thông điệp JSON
-            System.out.println("IOException: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.OK)
-                    .body(Map.of("status", 3, "message", "Internal server error: " + e.getMessage()));
+                    .body(new ResponseWrapper<>(null, 2));
         } catch (IllegalArgumentException e) {
-            // Trả về lỗi yêu cầu không hợp lệ với thông điệp JSON
-            System.out.println("IllegalArgumentException: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.OK)
-                    .body(Map.of("status", 2, "message", "Bad request: " + e.getMessage()));
+                    .body(new ResponseWrapper<>(null, 2));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -450,8 +459,6 @@ public class QuestionController {
 
 // Trả về ResponseEntity
                 return ResponseEntity.status(HttpStatus.OK).body(response);
-
-
             } else {
                 Collections.shuffle(allQuestions);
                 List<Question> limitedQuestions = allQuestions.stream()
@@ -490,7 +497,6 @@ public class QuestionController {
 
 // Trả về ResponseEntity
                 return ResponseEntity.status(HttpStatus.OK).body(response);
-
             }
 
         } catch (Exception e) {
@@ -821,11 +827,25 @@ public class QuestionController {
         try {
             List<Question> questions = questionRepo.findAll();
             if (questions.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.OK).body("No questions found.");
+                return ResponseEntity.status(HttpStatus.OK).body(new ResponseWrapper<>(null, 2));
             }
-            return ResponseEntity.status(HttpStatus.OK).body(questions);
+            SecretKey secretKey = AESUtil.generateKeyFromString("Tuandz99");
+            IvParameterSpec iv = AESUtil.generateIV();
+
+            // Chuyển User thành JSON và mã hóa
+            ObjectMapper objectMapper = new ObjectMapper();
+            String rawContent = objectMapper.writeValueAsString(questions);
+            String encryptedContent = AESUtil.encrypt(rawContent, secretKey, iv);
+
+            // Kết hợp dữ liệu mã hóa và IV (Base64)
+            String ivBase64 = Base64.getEncoder().encodeToString(iv.getIV());
+            String result = ivBase64 + ":" + encryptedContent;
+
+            // Trả về response
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new ResponseWrapper<>(result, 1));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.OK).body("An error occurred while retrieving questions.");
+            return ResponseEntity.status(HttpStatus.OK).body(new ResponseWrapper<>(null, 3));
         }
     }
 
