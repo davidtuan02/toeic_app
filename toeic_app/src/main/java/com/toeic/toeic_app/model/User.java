@@ -29,6 +29,7 @@ public class User {
     private String resetCode;
     private Date resetCodeExpiry;
     public boolean isTwoAuth;
+    private String token;
 
     public void setIsTwoAuth(Boolean isTwoAuth) {
         this.isTwoAuth = isTwoAuth;

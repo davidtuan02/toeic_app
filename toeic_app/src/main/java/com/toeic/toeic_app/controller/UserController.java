@@ -221,7 +221,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ResponseWrapper<String>> login(@RequestBody User loginRequest) {
+    public ResponseEntity<?> login(@RequestBody User loginRequest) {
         try {
             Optional<User> userOptional = userRepo.findByEmail(loginRequest.getEmail());
             if (userOptional.isPresent()) {
@@ -254,10 +254,23 @@ public class UserController {
                     String combinedContent = ivBase64 + ":" + encryptedContent;
 
 // Gói dữ liệu đã mã hóa vào ResponseWrapper
-                    ResponseWrapper<String> response = new ResponseWrapper<>(combinedContent, 1);
+
+                    try {
+                        String token = JwtUtil.generateToken(user.getEmail());
+                        System.out.println("Token generated: " + token); // Log token
+                        user.setToken(token);
+                        ResponseWrapper<?> response = new ResponseWrapper<>(user, 1);
+                        return ResponseEntity.status(HttpStatus.OK).body(response);
+                    } catch (Exception e) {
+                        e.printStackTrace(); // Log lỗi chi tiết
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .body(new ResponseWrapper<>(null, 3));
+                    }
+
+
+
 
 // Trả về ResponseEntity
-                    return ResponseEntity.status(HttpStatus.OK).body(response);
 
                 } else {
                     return ResponseEntity.status(HttpStatus.OK)
