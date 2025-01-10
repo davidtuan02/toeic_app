@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.toeic.toeic_app.dto.AuthDTO;
 import com.toeic.toeic_app.model.User;
 import com.toeic.toeic_app.repository.UserRepo;
+import com.toeic.toeic_app.security.jwt.TokenProvider;
 import com.toeic.toeic_app.util.AESUtil;
 import com.toeic.toeic_app.util.JwtUtil;
 import com.toeic.toeic_app.wrapper.ResponseWrapper;
@@ -13,6 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.DigestUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,6 +35,8 @@ import static com.toeic.toeic_app.util.AESUtil.AES_CBC_PADDING;
 public class UserController {
     private final SecretKey secretKey;
     private final UserRepo userRepo;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Autowired
     public UserController(SecretKey secretKey, UserRepo userRepo) {
@@ -41,6 +46,9 @@ public class UserController {
 
     @Autowired
     private JavaMailSender emailSender;
+
+    @Autowired
+    private TokenProvider tokenProvider;
 
     @PostMapping("/send-code")
     public ResponseEntity<?> sendResetCode(@RequestParam String email) {
@@ -256,7 +264,8 @@ public class UserController {
 // Gói dữ liệu đã mã hóa vào ResponseWrapper
 
                     try {
-                        String token = JwtUtil.generateToken(user.getEmail());
+//                        String token = JwtUtil.generateToken(user.getEmail());
+                        String token = tokenProvider.createToken(user.getEmail());
                         System.out.println("Token generated: " + token); // Log token
                         user.setToken(token);
                         ResponseWrapper<?> response = new ResponseWrapper<>(user, 1);
@@ -267,8 +276,7 @@ public class UserController {
                                 .body(new ResponseWrapper<>(null, 3));
                     }
 
-
-
+// code login ảo thế, để làm gì, t
 
 // Trả về ResponseEntity
 
@@ -441,10 +449,11 @@ public class UserController {
             user.setUpdatedDate(currentDate);
             user.setIsTwoAuth(false);
             String password = user.getPassword();
-            if (!isMD5Hash(password)) {
-                password = DigestUtils.md5DigestAsHex(password.getBytes());
-            }
-            user.setPassword(password);
+//            if (!isMD5Hash(password)) {
+//                password = DigestUtils.md5DigestAsHex(password.getBytes());
+//            }
+//            user.setPassword(password);
+            user.setPassword(passwordEncoder.encode(password));
             user.setRole("user");
 
             User savedUser = userRepo.save(user);
@@ -923,7 +932,11 @@ public class UserController {
     }
 
 
-
+    @GetMapping("/authenticate")
+    public String authorize() {
+        String token = tokenProvider.createToken("manhdv");
+        return token != null ? token : "fail" ;
+    }
 
 
 }
